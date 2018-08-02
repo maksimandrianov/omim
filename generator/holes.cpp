@@ -51,7 +51,7 @@ void HolesProcessor::operator() (uint64_t id, std::string const & role)
     m_holes(id);
 }
 
-
+// HolesRelation
 HolesRelation::HolesRelation(cache::IntermediateDataReader & holder) :
   m_holes(holder),
   m_outer(holder)

@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 
 class OsmElement;
 
@@ -60,7 +61,6 @@ public:
 protected:
   void Process(RelationElement const & e) override;
 };
-
 
 class RelationTagsWay : public RelationTagsBase
 {

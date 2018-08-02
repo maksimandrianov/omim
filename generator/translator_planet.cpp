@@ -203,9 +203,7 @@ void TranslatorPlanet::EmitArea(FeatureBuilder1 & ft, FeatureParams params,
   {
     // Make the area feature if it has unique area styles.
     VERIFY(RemoveNoDrawableTypes(params.m_types, GEOM_AREA), (params));
-
     fn(ft);
-
     EmitFeatureBase(ft, params);
   }
   else
