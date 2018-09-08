@@ -539,7 +539,7 @@ void Region::FillPolygon(FeatureBuilder1 const & fb)
 bool Region::IsCountry() const
 {
   static auto const kAdminLevelCountry = AdminLevel::Two;
-  return !HasAdminLevel() && m_regionData.GetAdminLevel() == kAdminLevelCountry;
+  return !HasPlaceType() && GetAdminLevel() == kAdminLevelCountry;
 }
 
 bool Region::Contains(Region const & smaller) const
@@ -781,9 +781,9 @@ bool GenerateRegions(feature::GenerateInfo const & genInfo)
   RegionsBuilder::Regions regions;
   PointCitiesMap pointCitiesMap;
   std::tie(regions, pointCitiesMap) = ReadDatasetFromTmpMwm(genInfo, regionsInfoCollector);
-
   FixRegions(regions, pointCitiesMap);
   FilterRegions(regions);
+
 
   auto jsonPolicy = std::make_unique<JsonPolicy>(genInfo.m_verbose);
   auto kvBuilder = std::make_unique<RegionsBuilder>(std::move(regions), std::move(jsonPolicy));
@@ -809,7 +809,7 @@ bool GenerateRegions(feature::GenerateInfo const & genInfo)
     auto const idStringList = kvBuilder->ToIdStringList(mergedTree);
     for (auto const & s : idStringList)
     {
-      ofs << s.first << " " << s.second << std::endl;
+      ofs << static_cast<int64_t>(s.first.GetEncodedId()) << " " << s.second << std::endl;
       ++countIds;
       if (!setIds.insert(s.first).second)
         LOG(LWARNING, ("Id alredy exists:",  s.first));
