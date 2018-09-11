@@ -124,8 +124,14 @@ void RegionInfoCollector::FillRegionData(base::GeoObjectId const & osmId, OsmEle
 {
   rd.m_osmId = osmId;
   rd.m_place = EncodePlaceType(el.GetTag("place"));
-  auto const al = el.GetTag("admin_level");
 
+  auto const & members = el.Members();
+  auto const it = std::find_if(std::begin(members), std::end(members),
+                               [](OsmElement::Member const & m) { return m.role == "admin_center"; });
+  if (it != std::end(members))
+    rd.m_osmIdAdminCenter = base::MakeOsmNode(it->ref);
+
+  auto const al = el.GetTag("admin_level");
   if (al.empty())
     return;
 

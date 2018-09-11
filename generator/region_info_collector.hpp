@@ -101,6 +101,7 @@ private:
     base::GeoObjectId m_osmId;
     AdminLevel m_adminLevel = AdminLevel::Unknown;
     PlaceType m_place = PlaceType::Unknown;
+    base::GeoObjectId m_osmIdAdminCenter;
   };
 
   using MapRegionData = std::unordered_map<base::GeoObjectId, RegionData>;
