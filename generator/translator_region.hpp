@@ -40,6 +40,7 @@ private:
   bool ParseParams(OsmElement * p, FeatureParams & params) const;
   void BuildFeatureAndEmitFromRelation(OsmElement const * p, FeatureParams & params);
   void BuildFeatureAndEmitFromWay(OsmElement const * p, FeatureParams & params);
+  void BuildFeatureAndEmitFromNode(OsmElement const * p, FeatureParams & params);
 
 private:
   std::shared_ptr<EmitterInterface> m_emitter;

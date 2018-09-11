@@ -40,16 +40,15 @@ void TranslatorRegion::EmitElement(OsmElement * p)
 
   switch (p->type)
   {
+  case OsmElement::EntityType::Node:
+    BuildFeatureAndEmitFromNode(p, params);
+    break;
   case OsmElement::EntityType::Relation:
-  {
     BuildFeatureAndEmitFromRelation(p, params);
     break;
-  }
   case OsmElement::EntityType::Way:
-  {
     BuildFeatureAndEmitFromWay(p, params);
     break;
-  }
   default:
     break;
   }
@@ -143,6 +142,18 @@ void TranslatorRegion::BuildFeatureAndEmitFromWay(OsmElement const * p, FeatureP
     return;
 
   fb.SetArea();
+  AddInfoAboutRegion(p, id);
+  (*m_emitter)(fb);
+}
+
+void TranslatorRegion::BuildFeatureAndEmitFromNode(OsmElement const * p, FeatureParams & params)
+{
+  m2::PointD const pt = MercatorBounds::FromLatLon(p->lat, p->lon);
+  FeatureBuilder1 fb;
+  fb.SetCenter(pt);
+  auto const id = base::MakeOsmNode(p->id);
+  fb.SetOsmId(id);
+  fb.SetParams(params);
   AddInfoAboutRegion(p, id);
   (*m_emitter)(fb);
 }
