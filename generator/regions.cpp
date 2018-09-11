@@ -172,27 +172,29 @@ void FillBoostGeometry(BoostGeometry & geometry, FbGeometry const & fbGeometry)
     boost::geometry::append(geometry, Region::BoostPoint{p.x, p.y});
 }
 
-RegionsBuilder::Regions ReadRegionsFromTmpMwm(feature::GenerateInfo const & genInfo,
-                                              RegionInfoCollector const & regionsInfoCollector)
+std::tuple<RegionsBuilder::Regions, std::unordered_map<base::GeoObjectId, FeatureBuilder1>>
+ReadRegionsFromTmpMwm(feature::GenerateInfo const & genInfo, RegionInfoCollector const & collector)
 {
   RegionsBuilder::Regions regions;
   auto const tmpMwmFilename = genInfo.GetTmpFileName(genInfo.m_fileName);
-  auto const toDo = [&regions, &regionsInfoCollector](FeatureBuilder1 const & fb, uint64_t /* currPos */)
+  auto const toDo = [&regions, &collector](FeatureBuilder1 const & fb, uint64_t /* currPos */)
   {
-    // We expect only the type of osm of the object - relation. But some settlements can be
-    // presented as ways. We must remember about this.
-    if (!fb.IsArea() || !fb.IsGeometryClosed())
-      return;
+    if (fb.IsArea() && fb.IsGeometryClosed())
+    {
+      auto const id = fb.GetMostGenericOsmId();
+      auto region = Region(fb, collector.Get(id));
 
-    auto const id = fb.GetMostGenericOsmId();
-    auto region = Region(fb, regionsInfoCollector.Get(id));
+      auto const & label = region.GetLabel();
+      auto const & name = region.GetName();
+      if (label.empty() || name.empty())
+        return;
 
-    auto const & label = region.GetLabel();
-    auto const & name = region.GetName();
-    if (label.empty() || name.empty())
-      return;
+      regions.emplace_back(std::move(region));
+    }
+    else if (fb.IsPoint())
+    {
 
-    regions.emplace_back(std::move(region));
+    }
   };
 
   feature::ForEachFromDatRawFormat(tmpMwmFilename, toDo);
