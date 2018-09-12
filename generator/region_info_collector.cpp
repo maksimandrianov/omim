@@ -242,4 +242,15 @@ std::string RegionDataProxy::GetIsoCodeAlphaNumeric() const
 {
   return GetMapIsoCode().at(m_osmId).GetNumeric();
 }
+
+bool RegionDataProxy::HasAdminCenter() const
+{
+  return (GetMapRegionData().count(m_osmId) != 0) &&
+      (GetMapRegionData().at(m_osmId).m_osmIdAdminCenter.IsValid());
+}
+
+base::GeoObjectId RegionDataProxy::GetAdminCenter() const
+{
+  return GetMapRegionData().at(m_osmId).m_osmIdAdminCenter;
+}
 }  // namespace generator

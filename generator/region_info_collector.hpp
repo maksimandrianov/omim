@@ -159,6 +159,9 @@ public:
   std::string GetIsoCodeAlpha3() const;
   std::string GetIsoCodeAlphaNumeric() const;
 
+  bool HasAdminCenter() const;
+  base::GeoObjectId GetAdminCenter() const;
+
 private:
   bool HasIsoCode() const;
   RegionInfoCollector const & GetCollector() const;

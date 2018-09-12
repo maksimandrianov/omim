@@ -36,11 +36,12 @@ namespace regions
 namespace
 {
 using MergeFunc = std::function<Node::Ptr(Node::Ptr, Node::Ptr)>;
+using PointCitiesMap = std::unordered_map<base::GeoObjectId, CityPoint>;
 
 class JsonPolicy : public ToStringPolicyInterface
 {
 public:
-  JsonPolicy(bool extendedOutput = false)
+  JsonPolicy(bool extendedOutput)
     : m_extendedOutput(extendedOutput)
   {
   }
@@ -172,12 +173,13 @@ void FillBoostGeometry(BoostGeometry & geometry, FbGeometry const & fbGeometry)
     boost::geometry::append(geometry, Region::BoostPoint{p.x, p.y});
 }
 
-std::tuple<RegionsBuilder::Regions, std::unordered_map<base::GeoObjectId, FeatureBuilder1>>
-ReadRegionsFromTmpMwm(feature::GenerateInfo const & genInfo, RegionInfoCollector const & collector)
+std::tuple<RegionsBuilder::Regions, PointCitiesMap>
+ReadDatasetFromTmpMwm(feature::GenerateInfo const & genInfo, RegionInfoCollector const & collector)
 {
   RegionsBuilder::Regions regions;
+  PointCitiesMap pointCitiesMap;
   auto const tmpMwmFilename = genInfo.GetTmpFileName(genInfo.m_fileName);
-  auto const toDo = [&regions, &collector](FeatureBuilder1 const & fb, uint64_t /* currPos */)
+  auto const toDo = [&regions, &pointCitiesMap, &collector](FeatureBuilder1 const & fb, uint64_t /* currPos */)
   {
     if (fb.IsArea() && fb.IsGeometryClosed())
     {
@@ -193,12 +195,13 @@ ReadRegionsFromTmpMwm(feature::GenerateInfo const & genInfo, RegionInfoCollector
     }
     else if (fb.IsPoint())
     {
-
+      auto const id = fb.GetMostGenericOsmId();
+      pointCitiesMap.emplace(id, CityPoint(fb, collector.Get(id)));
     }
   };
 
   feature::ForEachFromDatRawFormat(tmpMwmFilename, toDo);
-  return regions;
+  return std::make_tuple(regions, pointCitiesMap);
 }
 
 bool LessNodePtrByName(Node::Ptr l, Node::Ptr r)
@@ -291,6 +294,12 @@ void NormalizeTree(Node::Ptr tree)
     NormalizeTree(ch);
 }
 }  // namespace
+
+CityPoint::CityPoint(FeatureBuilder1 const & fb, RegionDataProxy const & rd)
+  : m_name(fb.GetParams().name),
+    m_regionData(rd)
+{
+}
 
 Region::Region(FeatureBuilder1 const & fb, RegionDataProxy const & rd)
   : m_name(fb.GetParams().name),
@@ -402,34 +411,25 @@ uint8_t Region::GetRank() const
 {
   auto const adminLevel = m_regionData.GetAdminLevel();
   auto const placeType = m_regionData.GetPlaceType();
-  switch (adminLevel)
-  {
-  case AdminLevel::Two:
-  case AdminLevel::Four: return static_cast<uint8_t>(adminLevel);
-  default: break;
-  }
 
   switch (placeType)
   {
   case PlaceType::City:
   case PlaceType::Town:
   case PlaceType::Village:
-  case PlaceType::Hamlet: return static_cast<uint8_t>(placeType);
+  case PlaceType::Hamlet:
+  case PlaceType::Suburb:
+  case PlaceType::Neighbourhood:
+  case PlaceType::Locality:
+  case PlaceType::IsolatedDwelling: return static_cast<uint8_t>(placeType);
   default: break;
   }
 
   switch (adminLevel)
   {
+  case AdminLevel::Two:
+  case AdminLevel::Four:
   case AdminLevel::Six: return static_cast<uint8_t>(adminLevel);
-  default: break;
-  }
-
-  switch (placeType)
-  {
-  case PlaceType::Suburb:
-  case PlaceType::Neighbourhood:
-  case PlaceType::Locality:
-  case PlaceType::IsolatedDwelling: return static_cast<uint8_t>(placeType);
   default: break;
   }
 
@@ -440,12 +440,6 @@ std::string Region::GetLabel() const
 {
   auto const adminLevel = m_regionData.GetAdminLevel();
   auto const placeType = m_regionData.GetPlaceType();
-  switch (adminLevel)
-  {
-  case AdminLevel::Two: return "country";
-  case AdminLevel::Four: return "region";
-  default: break;
-  }
 
   switch (placeType)
   {
@@ -453,21 +447,18 @@ std::string Region::GetLabel() const
   case PlaceType::Town:
   case PlaceType::Village:
   case PlaceType::Hamlet: return "locality";
+  case PlaceType::Suburb:
+  case PlaceType::Neighbourhood: return "suburb";
+  case PlaceType::Locality:
+  case PlaceType::IsolatedDwelling: return "sublocality";
   default: break;
   }
 
   switch (adminLevel)
   {
+  case AdminLevel::Two: return "country";
+  case AdminLevel::Four: return "region";
   case AdminLevel::Six: return "subregion";
-  default: break;
-  }
-
-  switch (placeType)
-  {
-  case PlaceType::Suburb:
-  case PlaceType::Neighbourhood: return "suburb";
-  case PlaceType::Locality:
-  case PlaceType::IsolatedDwelling: return "sublocality";
   default: break;
   }
 
@@ -501,9 +492,20 @@ base::GeoObjectId Region::GetId() const
   return m_regionData.GetOsmId();
 }
 
-RegionsBuilder::RegionsBuilder(Regions && regions)
-  : RegionsBuilder(std::move(regions), std::make_unique<JsonPolicy>())
+bool Region::HasAdminCenter() const
 {
+  return m_regionData.HasAdminCenter();
+}
+
+base::GeoObjectId Region::GetAdminCenterId() const
+{
+  return m_regionData.GetOsmId();
+}
+
+void Region::SetInfo(CityPoint const & cityPoint)
+{
+  m_name = cityPoint.m_name;
+  m_regionData = cityPoint.m_regionData;
 }
 
 RegionsBuilder::RegionsBuilder(Regions && regions,
@@ -679,7 +681,10 @@ bool GenerateRegions(feature::GenerateInfo const & genInfo)
       genInfo.GetTmpFileName(genInfo.m_fileName, RegionInfoCollector::kDefaultExt);
   RegionInfoCollector regionsInfoCollector(collectorFilename);
 
-  auto regions = ReadRegionsFromTmpMwm(genInfo, regionsInfoCollector);
+  RegionsBuilder::Regions regions;
+  PointCitiesMap pointCitiesMap;
+  std::tie(regions, pointCitiesMap) = ReadDatasetFromTmpMwm(genInfo, regionsInfoCollector);
+
   auto jsonPolicy = std::make_unique<JsonPolicy>(genInfo.m_verbose);
   auto kvBuilder = std::make_unique<RegionsBuilder>(std::move(regions), std::move(jsonPolicy));
   auto const countryTrees = kvBuilder->GetCountryTrees();

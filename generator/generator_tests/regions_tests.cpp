@@ -18,7 +18,7 @@
 #include <utility>
 
 using namespace generator;
-using namespace generator::regions;
+using namespace generator::dataset;
 
 namespace
 {

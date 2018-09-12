@@ -25,6 +25,8 @@ namespace generator
 {
 namespace regions
 {
+struct CityPoint;
+
 // This is a helper class that is needed to represent the region.
 // With this view, further processing is simplified.
 struct Region
@@ -60,6 +62,9 @@ struct Region
   BoostRect const & GetRect() const;
   double GetArea() const;
   base::GeoObjectId GetId() const;
+  bool HasAdminCenter() const;
+  base::GeoObjectId GetAdminCenterId() const;
+  void SetInfo(CityPoint const & cityPoint);
 
 private:
   void FillPolygon(FeatureBuilder1 const & fb);
@@ -69,6 +74,24 @@ private:
   std::shared_ptr<BoostPolygon> m_polygon;
   BoostRect m_rect;
   double m_area;
+};
+
+struct CityPoint
+{
+  friend struct Region;
+
+  explicit CityPoint(FeatureBuilder1 const & fb, RegionDataProxy const & rd);
+
+  std::string GetName(int8_t lang = StringUtf8Multilang::kDefaultCode) const
+  {
+    std::string s;
+    VERIFY(m_name.GetString(lang, s) != s.empty(), ());
+    return s;
+  }
+
+private:
+  StringUtf8Multilang m_name;
+  RegionDataProxy m_regionData;
 };
 
 struct Node
@@ -111,7 +134,6 @@ public:
   using IdStringList = std::vector<std::pair<base::GeoObjectId, std::string>>;
   using CountryTrees = std::multimap<std::string, Node::Ptr>;
 
-  explicit RegionsBuilder(Regions && regions);
   explicit RegionsBuilder(Regions && regions,
                           std::unique_ptr<ToStringPolicyInterface> toStringPolicy);
 
