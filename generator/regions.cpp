@@ -14,6 +14,7 @@
 
 #include <chrono>
 #include <fstream>
+#include <functional>
 #include <numeric>
 #include <memory>
 #include <queue>
@@ -185,12 +186,6 @@ ReadDatasetFromTmpMwm(feature::GenerateInfo const & genInfo, RegionInfoCollector
     {
       auto const id = fb.GetMostGenericOsmId();
       auto region = Region(fb, collector.Get(id));
-
-      auto const & label = region.GetLabel();
-      auto const & name = region.GetName();
-      if (label.empty() || name.empty())
-        return;
-
       regions.emplace_back(std::move(region));
     }
     else if (fb.IsPoint())
@@ -202,6 +197,74 @@ ReadDatasetFromTmpMwm(feature::GenerateInfo const & genInfo, RegionInfoCollector
 
   feature::ForEachFromDatRawFormat(tmpMwmFilename, toDo);
   return std::make_tuple(regions, pointCitiesMap);
+}
+
+void FixRegions(RegionsBuilder::Regions & regions, PointCitiesMap const & pointCitiesMap)
+{
+ RegionsBuilder::Regions regionsWithAdminCenter;
+ auto const pred = [](Region const & region)
+ {
+   return region.GetAdminCenterId().IsValid();
+ };
+ std::copy_if(std::begin(regions), std::end(regions), std::back_inserter(regionsWithAdminCenter), pred);
+ auto const it =  std::remove_if(std::begin(regions), std::end(regions), pred);
+ regions.erase(it, std::end(regions));
+
+ std::multimap<std::string, std::reference_wrapper<Region const>> m;
+ for (auto const & region : regions)
+ {
+   auto const name = region.GetName();
+   if (region.GetLabel() == "locality" && !name.empty())
+     m.emplace(name, region);
+ }
+
+ auto const cmp = [](Region const & l, Region const & r) { return l.GetArea() < r.GetArea(); };
+ std::sort(std::begin(regionsWithAdminCenter), std::end(regionsWithAdminCenter), cmp);
+ std::vector<bool> unsuitable;
+ unsuitable.resize(regionsWithAdminCenter.size());
+ for (size_t i = 0; i < regionsWithAdminCenter.size(); ++i)
+ {
+   if (unsuitable[i])
+     continue;
+
+   for (size_t j =  i + 1; j < regionsWithAdminCenter.size() - 1; ++j)
+   {
+     if (regionsWithAdminCenter[j].ContainsRect(regionsWithAdminCenter[i]))
+       unsuitable[j] = true;
+   }
+
+   auto & regionWithAdminCenter = regionsWithAdminCenter[i];
+   auto const id = regionWithAdminCenter.GetAdminCenterId();
+   auto const & adminCenter = pointCitiesMap.at(id);
+   auto const range = m.equal_range(adminCenter.GetName());
+   for (auto it = range.first; it != range.second; ++it)
+   {
+     auto const kAvaliableOverlapPercentage = 98;
+     if (regionWithAdminCenter.CalculateOverlapPercentage(it->second) > kAvaliableOverlapPercentage)
+     {
+      unsuitable[i] = true;
+      break;
+     }
+   }
+
+   if (!unsuitable[i])
+    regionWithAdminCenter.SetInfo(adminCenter);
+ }
+
+ std::move(std::begin(regionsWithAdminCenter), std::end(regionsWithAdminCenter),
+           std::back_inserter(regions));
+}
+
+void FilterRegions(RegionsBuilder::Regions & regions)
+{
+  auto const pred = [] (Region const & region)
+  {
+    auto const & label = region.GetLabel();
+    auto const & name = region.GetName();
+    return label.empty() || name.empty();
+  };
+  auto const it = std::remove_if(std::begin(regions), std::end(regions), pred);
+  regions.erase(it, std::end(regions));
 }
 
 bool LessNodePtrByName(Node::Ptr l, Node::Ptr r)
@@ -685,6 +748,8 @@ bool GenerateRegions(feature::GenerateInfo const & genInfo)
   PointCitiesMap pointCitiesMap;
   std::tie(regions, pointCitiesMap) = ReadDatasetFromTmpMwm(genInfo, regionsInfoCollector);
 
+  FixRegions(regions, pointCitiesMap);
+  FilterRegions(regions);
   auto jsonPolicy = std::make_unique<JsonPolicy>(genInfo.m_verbose);
   auto kvBuilder = std::make_unique<RegionsBuilder>(std::move(regions), std::move(jsonPolicy));
   auto const countryTrees = kvBuilder->GetCountryTrees();
