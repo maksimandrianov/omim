@@ -201,6 +201,7 @@ ReadDatasetFromTmpMwm(feature::GenerateInfo const & genInfo, RegionInfoCollector
 
 void FixRegions(RegionsBuilder::Regions & regions, PointCitiesMap const & pointCitiesMap)
 {
+ static std::ofstream ofs("regions.log");
  RegionsBuilder::Regions regionsWithAdminCenter;
  auto const pred = [](Region const & region) { return region.GetAdminCenterId().IsValid(); };
  std::copy_if(std::begin(regions), std::end(regions), std::back_inserter(regionsWithAdminCenter), pred);
@@ -251,7 +252,10 @@ void FixRegions(RegionsBuilder::Regions & regions, PointCitiesMap const & pointC
    }
 
    if (!unsuitable[i])
+   {
+    ofs << regionWithAdminCenter.GetName() << "  with " << adminCenter.GetName() << std::endl;
     regionWithAdminCenter.SetInfo(adminCenter);
+   }
  }
 
  std::move(std::begin(regionsWithAdminCenter), std::end(regionsWithAdminCenter),
