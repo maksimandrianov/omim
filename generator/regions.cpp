@@ -222,6 +222,7 @@ void FixRegions(RegionsBuilder::Regions & regions, PointCitiesMap const & pointC
  unsuitable.resize(regionsWithAdminCenter.size());
  for (size_t i = 0; i < regionsWithAdminCenter.size(); ++i)
  {
+   ofs << "Processing " << regionsWithAdminCenter[i].GetName() << " " << unsuitable[i] <<  std::endl;
    if (unsuitable[i])
      continue;
 
