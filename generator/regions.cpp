@@ -202,10 +202,7 @@ ReadDatasetFromTmpMwm(feature::GenerateInfo const & genInfo, RegionInfoCollector
 void FixRegions(RegionsBuilder::Regions & regions, PointCitiesMap const & pointCitiesMap)
 {
  RegionsBuilder::Regions regionsWithAdminCenter;
- auto const pred = [](Region const & region)
- {
-   return region.GetAdminCenterId().IsValid();
- };
+ auto const pred = [](Region const & region) { return region.GetAdminCenterId().IsValid(); };
  std::copy_if(std::begin(regions), std::end(regions), std::back_inserter(regionsWithAdminCenter), pred);
  auto const it =  std::remove_if(std::begin(regions), std::end(regions), pred);
  regions.erase(it, std::end(regions));
@@ -235,6 +232,12 @@ void FixRegions(RegionsBuilder::Regions & regions, PointCitiesMap const & pointC
 
    auto & regionWithAdminCenter = regionsWithAdminCenter[i];
    auto const id = regionWithAdminCenter.GetAdminCenterId();
+   if (pointCitiesMap.count(id) == 0)
+   {
+     unsuitable[i] = true;
+     break;
+   }
+
    auto const & adminCenter = pointCitiesMap.at(id);
    auto const range = m.equal_range(adminCenter.GetName());
    for (auto it = range.first; it != range.second; ++it)
@@ -257,7 +260,7 @@ void FixRegions(RegionsBuilder::Regions & regions, PointCitiesMap const & pointC
 
 void FilterRegions(RegionsBuilder::Regions & regions)
 {
-  auto const pred = [] (Region const & region)
+  auto const pred = [](Region const & region)
   {
     auto const & label = region.GetLabel();
     auto const & name = region.GetName();
@@ -562,7 +565,7 @@ bool Region::HasAdminCenter() const
 
 base::GeoObjectId Region::GetAdminCenterId() const
 {
-  return m_regionData.GetOsmId();
+  return m_regionData.GetAdminCenter();
 }
 
 void Region::SetInfo(CityPoint const & cityPoint)

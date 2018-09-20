@@ -127,7 +127,7 @@ void RegionInfoCollector::FillRegionData(base::GeoObjectId const & osmId, OsmEle
 
   auto const & members = el.Members();
   auto const it = std::find_if(std::begin(members), std::end(members),
-                               [](OsmElement::Member const & m) { return m.role == "admin_center"; });
+                               [](OsmElement::Member const & m) { return m.role == "admin_centre"; });
   if (it != std::end(members))
     rd.m_osmIdAdminCenter = base::MakeOsmNode(it->ref);
 
@@ -171,10 +171,12 @@ RegionInfoCollector const & RegionDataProxy::GetCollector() const
   return m_regionInfoCollector;
 }
 
+
 RegionInfoCollector::MapRegionData const & RegionDataProxy::GetMapRegionData() const
 {
   return GetCollector().m_mapRegionData;
 }
+
 
 RegionInfoCollector::MapIsoCode const & RegionDataProxy::GetMapIsoCode() const
 {

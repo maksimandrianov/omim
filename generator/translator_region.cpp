@@ -56,26 +56,21 @@ void TranslatorRegion::EmitElement(OsmElement * p)
 
 bool TranslatorRegion::IsSuitableElement(OsmElement const * p) const
 {
-  static std::set<std::string> const adminLevels = {"2", "4", "5", "6", "7", "8"};
   static std::set<std::string> const places = {"city", "town", "village", "suburb", "neighbourhood",
                                                "hamlet", "locality", "isolated_dwelling"};
 
-  bool haveBoundary = false;
-  bool haveAdminLevel = false;
-  bool haveName = false;
   for (auto const & t : p->Tags())
   {
     if (t.key == "place" && places.find(t.value) != places.end())
       return true;
 
-    if (t.key == "boundary" && t.value == "administrative")
-      haveBoundary = true;
-    else if (t.key == "admin_level" && adminLevels.find(t.value) != adminLevels.end())
-      haveAdminLevel = true;
-    else if (t.key == "name" && !t.value.empty())
-      haveName = true;
+    auto const & members = p->Members();
+    auto const pred = [](OsmElement::Member const & m) { return m.role == "admin_centre"; };
+    if (t.key == "boundary" && t.value == "administrative" &&
+        std::find_if(std::begin(members), std::end(members), pred) != std::end(members))
+      return true;
 
-    if (haveBoundary && haveAdminLevel && haveName)
+    if (t.key == "boundary" && t.value == "administrative")
       return true;
   }
 
