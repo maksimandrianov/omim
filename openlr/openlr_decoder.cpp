@@ -93,7 +93,7 @@ bool IsRealVertex(m2::PointD const & p, FeatureID const & fid, DataSource const 
   return matched;
 };
 
-void ExpandFake(Graph::EdgeVector & path, Graph::EdgeVector::iterator edgeIt, DataSource const & dataSource,
+bool ExpandFake(Graph::EdgeVector & path, Graph::EdgeVector::iterator edgeIt, DataSource const & dataSource,
                 Graph & g)
 {
   if (!edgeIt->IsFake())
@@ -137,6 +137,7 @@ void ExpandFake(Graph::EdgeVector & path, Graph::EdgeVector::iterator edgeIt, Da
     LOG(LINFO, ("edges:", edges));
     LOG(LINFO, ("edgeId", *edgeIt));
 
+    return false;
   }
 
   CHECK(it != end(edges), ());
@@ -147,18 +148,20 @@ void ExpandFake(Graph::EdgeVector & path, Graph::EdgeVector::iterator edgeIt, Da
     *edgeIt = *it;
   else
     path.erase(edgeIt);
+
+  return true;
 };
 
-void ExpandFakes(DataSource const & dataSource, Graph & g, Graph::EdgeVector & path)
+bool ExpandFakes(DataSource const & dataSource, Graph & g, Graph::EdgeVector & path)
 {
   CHECK(!path.empty(), ());
 
-  LOG(LINFO, ("ExpandFake(path, begin(path), dataSource, g);"));
-  ExpandFake(path, begin(path), dataSource, g);
-  if (path.empty())
-    return;
-  LOG(LINFO, ("ExpandFake(path, --end(path), dataSource, g);"));
-  ExpandFake(path, --end(path), dataSource, g);
+  if (ExpandFake(path, begin(path), dataSource, g) && !path.empty())
+    return true;
+  else
+    return false;
+
+  return ExpandFake(path, --end(path), dataSource, g);
 }
 
 // Returns an iterator pointing to the first edge that should not be cut off.
@@ -343,7 +346,9 @@ public:
       return false;
     }
 
-    ExpandFakes(m_dataSource, m_graph, route);
+    if (!ExpandFakes(m_dataSource, m_graph, route))
+      return false;
+
     ASSERT(none_of(begin(route), end(route), mem_fn(&Graph::Edge::IsFake)), (segment.m_segmentId));
     CopyWithoutOffsets(begin(route), end(route), back_inserter(path.m_path), positiveOffsetM,
                        negativeOffsetM);
