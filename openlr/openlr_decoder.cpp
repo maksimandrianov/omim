@@ -106,7 +106,7 @@ void ExpandFake(Graph::EdgeVector & path, Graph::EdgeVector::iterator edgeIt, Da
   }
   else
   {
-    ASSERT(IsRealVertex(edgeIt->GetEndPoint(), edgeIt->GetFeatureId(), dataSource), ());
+    CHECK(IsRealVertex(edgeIt->GetEndPoint(), edgeIt->GetFeatureId(), dataSource), ());
     g.GetRegularIngoingEdges(edgeIt->GetEndJunction(), edges);
   }
 
@@ -117,6 +117,14 @@ void ExpandFake(Graph::EdgeVector & path, Graph::EdgeVector::iterator edgeIt, Da
         return true;
       return false;
     });
+
+  if (it != end(edges))
+  {
+    LOG(LINFO, ("Size of edges:", edges.size()));
+    LOG(LINFO, ("edges:", edges));
+    LOG(LINFO, ("edgeId", *edgeIt));
+
+  }
 
   CHECK(it != end(edges), ());
 

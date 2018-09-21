@@ -25,73 +25,93 @@ namespace generator
 {
 namespace regions
 {
+using Point = FeatureBuilder1::PointSeq::value_type;
+using BoostPoint = boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>;
+using BoostPolygon = boost::geometry::model::polygon<BoostPoint>;
+using BoostRect = boost::geometry::model::box<BoostPoint>;
+
 struct CityPoint;
 
-// This is a helper class that is needed to represent the region.
-// With this view, further processing is simplified.
-struct Region
+struct StringUtf8MultilangNamable
 {
-  static uint8_t constexpr kNoRank = 0;
+  StringUtf8MultilangNamable(StringUtf8Multilang const & name) : m_name(name) {}
 
-  using Point = FeatureBuilder1::PointSeq::value_type;
-  using BoostPoint = boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>;
-  using BoostPolygon = boost::geometry::model::polygon<BoostPoint>;
-  using BoostRect = boost::geometry::model::box<BoostPoint>;
-
-  explicit Region(FeatureBuilder1 const & fb, RegionDataProxy const & rd);
-
-  void DeletePolygon();
   // This function will take the following steps:
   // 1. Return the english name if it exists.
   // 2. Return transliteration if it succeeds.
   // 3. Otherwise, return empty string.
   std::string GetEnglishOrTransliteratedName() const;
   std::string GetName(int8_t lang = StringUtf8Multilang::kDefaultCode) const;
-  bool IsCountry() const;
+  StringUtf8Multilang const & GetStringUtf8MultilangName() const;
+  void SetStringUtf8MultilangName(StringUtf8Multilang const & name);
+
+protected:
+  StringUtf8Multilang m_name;
+};
+
+struct RegionDatable
+{
+  static uint8_t constexpr kNoRank = 0;
+
+  RegionDatable(RegionDataProxy const & regionData) : m_regionData(regionData) {}
+
+  base::GeoObjectId GetId() const;
+  bool HasAdminCenter() const;
+  base::GeoObjectId GetAdminCenterId() const;
   bool HasIsoCode() const;
   std::string GetIsoCode() const;
-  bool Contains(Region const & smaller) const;
-  bool ContainsRect(Region const & smaller) const;
-  double CalculateOverlapPercentage(Region const & other) const;
   // Absolute rank values do not mean anything. But if the rank of the first object is more than the
   // rank of the second object, then the first object is considered more nested.
   uint8_t GetRank() const;
   std::string GetLabel() const;
+
+  AdminLevel GetAdminLevel() const { return m_regionData.GetAdminLevel(); }
+  PlaceType GetPlaceType() const { return m_regionData.GetPlaceType(); }
+
+  void SetAdminLevel(AdminLevel adminLevel) { m_regionData.SetAdminLevel(adminLevel); }
+  void SetPlaceType(PlaceType placeType) { m_regionData.SetPlaceType(placeType); }
+
+  bool HasAdminLevel() const { return m_regionData.HasAdminLevel(); }
+  bool HasPlaceType() const { return m_regionData.HasPlaceType(); }
+
+protected:
+  RegionDataProxy m_regionData;
+};
+
+// This is a helper class that is needed to represent the region.
+// With this view, further processing is simplified.
+struct Region : public StringUtf8MultilangNamable, public RegionDatable
+{
+  explicit Region(FeatureBuilder1 const & fb, RegionDataProxy const & rd);
+
+  void DeletePolygon();
+  bool IsCountry() const;
+  bool Contains(Region const & smaller) const;
+  bool ContainsRect(Region const & smaller) const;
+  double CalculateOverlapPercentage(Region const & other) const;
   BoostPoint GetCenter() const;
   std::shared_ptr<BoostPolygon> const GetPolygon() const;
   BoostRect const & GetRect() const;
   double GetArea() const;
-  base::GeoObjectId GetId() const;
-  bool HasAdminCenter() const;
-  base::GeoObjectId GetAdminCenterId() const;
+  bool Contains(CityPoint const & cityPoint) const;
   void SetInfo(CityPoint const & cityPoint);
 
 private:
   void FillPolygon(FeatureBuilder1 const & fb);
 
-  StringUtf8Multilang m_name;
-  RegionDataProxy m_regionData;
   std::shared_ptr<BoostPolygon> m_polygon;
   BoostRect m_rect;
   double m_area;
 };
 
-struct CityPoint
+struct CityPoint : public StringUtf8MultilangNamable, public RegionDatable
 {
-  friend struct Region;
-
   explicit CityPoint(FeatureBuilder1 const & fb, RegionDataProxy const & rd);
 
-  std::string GetName(int8_t lang = StringUtf8Multilang::kDefaultCode) const
-  {
-    std::string s;
-    VERIFY(m_name.GetString(lang, s) != s.empty(), ());
-    return s;
-  }
+  BoostPoint GetCenter() const;
 
 private:
-  StringUtf8Multilang m_name;
-  RegionDataProxy m_regionData;
+  BoostPoint m_center;
 };
 
 struct Node

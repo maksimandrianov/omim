@@ -148,6 +148,9 @@ public:
   AdminLevel GetAdminLevel() const;
   PlaceType GetPlaceType() const;
 
+  void SetAdminLevel(AdminLevel adminLevel);
+  void SetPlaceType(PlaceType placeType);
+
   bool HasAdminLevel() const;
   bool HasPlaceType() const;
 

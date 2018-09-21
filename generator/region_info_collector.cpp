@@ -159,7 +159,7 @@ void RegionInfoCollector::FillIsoCode(base::GeoObjectId const & osmId, OsmElemen
   rd.SetNumeric(el.GetTag("ISO3166-1:numeric"));
 }
 
-RegionDataProxy::RegionDataProxy(RegionInfoCollector const & regionInfoCollector,
+RegionDataProxy::RegionDataProxy(const RegionInfoCollector & regionInfoCollector,
                                  base::GeoObjectId const & osmId)
   : m_regionInfoCollector(regionInfoCollector),
     m_osmId(osmId)
@@ -196,6 +196,16 @@ AdminLevel RegionDataProxy::GetAdminLevel() const
 PlaceType RegionDataProxy::GetPlaceType() const
 {
   return GetMapRegionData().at(m_osmId).m_place;
+}
+
+void RegionDataProxy::SetAdminLevel(AdminLevel adminLevel)
+{
+  const_cast<AdminLevel &>(GetMapRegionData().at(m_osmId).m_adminLevel) = adminLevel;
+}
+
+void RegionDataProxy::SetPlaceType(PlaceType placeType)
+{
+  const_cast<PlaceType &>(GetMapRegionData().at(m_osmId).m_place) = placeType;
 }
 
 bool RegionDataProxy::HasAdminLevel() const

@@ -171,7 +171,7 @@ void FillBoostGeometry(BoostGeometry & geometry, FbGeometry const & fbGeometry)
 {
   geometry.reserve(fbGeometry.size());
   for (auto const & p : fbGeometry)
-    boost::geometry::append(geometry, Region::BoostPoint{p.x, p.y});
+    boost::geometry::append(geometry, BoostPoint{p.x, p.y});
 }
 
 std::tuple<RegionsBuilder::Regions, PointCitiesMap>
@@ -201,66 +201,67 @@ ReadDatasetFromTmpMwm(feature::GenerateInfo const & genInfo, RegionInfoCollector
 
 void FixRegions(RegionsBuilder::Regions & regions, PointCitiesMap const & pointCitiesMap)
 {
- static std::ofstream ofs("regions.log");
- RegionsBuilder::Regions regionsWithAdminCenter;
- auto const pred = [](Region const & region) { return region.GetAdminCenterId().IsValid(); };
- std::copy_if(std::begin(regions), std::end(regions), std::back_inserter(regionsWithAdminCenter), pred);
- auto const it =  std::remove_if(std::begin(regions), std::end(regions), pred);
- regions.erase(it, std::end(regions));
+  RegionsBuilder::Regions regionsWithAdminCenter;
+  auto const pred = [](Region const & region) { return region.GetAdminCenterId().IsValid(); };
+  std::copy_if(std::begin(regions), std::end(regions), std::back_inserter(regionsWithAdminCenter), pred);
+  auto const it =  std::remove_if(std::begin(regions), std::end(regions), pred);
+  regions.erase(it, std::end(regions));
 
- std::multimap<std::string, std::reference_wrapper<Region const>> m;
- for (auto const & region : regions)
- {
-   auto const name = region.GetName();
-   if (region.GetLabel() == "locality" && !name.empty())
-     m.emplace(name, region);
- }
+  std::multimap<std::string, std::reference_wrapper<Region const>> m;
+  for (auto const & region : regions)
+  {
+    auto const name = region.GetName();
+    if (region.GetLabel() == "locality" && !name.empty())
+      m.emplace(name, region);
+  }
 
- auto const cmp = [](Region const & l, Region const & r) { return l.GetArea() < r.GetArea(); };
- std::sort(std::begin(regionsWithAdminCenter), std::end(regionsWithAdminCenter), cmp);
- std::vector<bool> unsuitable;
- unsuitable.resize(regionsWithAdminCenter.size());
- for (size_t i = 0; i < regionsWithAdminCenter.size(); ++i)
- {
-   ofs << "Processing " << regionsWithAdminCenter[i].GetName() << " " << unsuitable[i] <<  std::endl;
-   if (unsuitable[i])
-     continue;
+  auto const cmp = [](Region const & l, Region const & r) { return l.GetArea() < r.GetArea(); };
+  std::sort(std::begin(regionsWithAdminCenter), std::end(regionsWithAdminCenter), cmp);
+  std::vector<bool> unsuitable;
+  unsuitable.resize(regionsWithAdminCenter.size());
+  for (size_t i = 0; i < regionsWithAdminCenter.size(); ++i)
+  {
+    if (unsuitable[i])
+      continue;
 
-   for (size_t j =  i + 1; j < regionsWithAdminCenter.size() - 1; ++j)
-   {
-     if (regionsWithAdminCenter[j].ContainsRect(regionsWithAdminCenter[i]))
-       unsuitable[j] = true;
-   }
-
-   auto & regionWithAdminCenter = regionsWithAdminCenter[i];
-   auto const id = regionWithAdminCenter.GetAdminCenterId();
-   if (pointCitiesMap.count(id) == 0)
-   {
-     unsuitable[i] = true;
-     break;
-   }
-
-   auto const & adminCenter = pointCitiesMap.at(id);
-   auto const range = m.equal_range(adminCenter.GetName());
-   for (auto it = range.first; it != range.second; ++it)
-   {
-     auto const kAvaliableOverlapPercentage = 98;
-     if (regionWithAdminCenter.CalculateOverlapPercentage(it->second) > kAvaliableOverlapPercentage)
-     {
+    auto & regionWithAdminCenter = regionsWithAdminCenter[i];
+    if (regionWithAdminCenter.IsCountry())
+    {
       unsuitable[i] = true;
-      break;
-     }
-   }
+      continue;
+    }
 
-   if (!unsuitable[i])
-   {
-    ofs << regionWithAdminCenter.GetName() << "  with " << adminCenter.GetName() << std::endl;
-    regionWithAdminCenter.SetInfo(adminCenter);
-   }
- }
+    for (size_t j =  i + 1; j < regionsWithAdminCenter.size() - 1; ++j)
+    {
+      if (regionsWithAdminCenter[j].ContainsRect(regionWithAdminCenter))
+        unsuitable[j] = true;
+    }
 
- std::move(std::begin(regionsWithAdminCenter), std::end(regionsWithAdminCenter),
-           std::back_inserter(regions));
+    auto const id = regionWithAdminCenter.GetAdminCenterId();
+    if (!pointCitiesMap.count(id))
+    {
+      unsuitable[i] = true;
+      continue;
+    }
+
+    auto const & adminCenter = pointCitiesMap.at(id);
+    auto const range = m.equal_range(adminCenter.GetName());
+    for (auto it = range.first; it != range.second; ++it)
+    {
+      Region const & r = it->second;
+      if (adminCenter.GetRank() == r.GetRank() && r.Contains(adminCenter))
+      {
+        unsuitable[i] = true;
+        break;
+      }
+    }
+
+    if (!unsuitable[i])
+      regionWithAdminCenter.SetInfo(adminCenter);
+  }
+
+  std::move(std::begin(regionsWithAdminCenter), std::end(regionsWithAdminCenter),
+            std::back_inserter(regions));
 }
 
 void FilterRegions(RegionsBuilder::Regions & regions)
@@ -275,11 +276,11 @@ void FilterRegions(RegionsBuilder::Regions & regions)
   regions.erase(it, std::end(regions));
 }
 
-bool LessNodePtrByName(Node::Ptr l, Node::Ptr r)
+bool LessNodePtrById(Node::Ptr l, Node::Ptr r)
 {
   auto const & lRegion = l->GetData();
   auto const & rRegion = r->GetData();
-  return lRegion.GetName() < rRegion.GetName();
+  return lRegion.GetId() < rRegion.GetId();
 }
 
 Node::PtrList MergeChildren(Node::PtrList const & l, Node::PtrList const & r, Node::Ptr newParent)
@@ -289,7 +290,7 @@ Node::PtrList MergeChildren(Node::PtrList const & l, Node::PtrList const & r, No
   for (auto & p : result)
     p->SetParent(newParent);
 
-  std::sort(std::begin(result), std::end(result), LessNodePtrByName);
+  std::sort(std::begin(result), std::end(result), LessNodePtrById);
   return result;
 }
 
@@ -300,7 +301,7 @@ Node::PtrList NormalizeChildren(Node::PtrList const & children, MergeFunc mergeT
   {
     auto const & lRegion = l->GetData();
     auto const & rRegion = r->GetData();
-    return lRegion.GetName() == rRegion.GetName();
+    return lRegion.GetId() == rRegion.GetId();
   };
   std::unique_copy(std::begin(children), std::end(children),
                    std::back_inserter(uniqueChildren), pred);
@@ -308,7 +309,7 @@ Node::PtrList NormalizeChildren(Node::PtrList const & children, MergeFunc mergeT
   for (auto const & ch : uniqueChildren)
   {
     auto const bounds = std::equal_range(std::begin(children), std::end(children),
-                                         ch, LessNodePtrByName);
+                                         ch, LessNodePtrById);
     auto merged = std::accumulate(bounds.first, bounds.second, Node::Ptr(), mergeTree);
     result.emplace_back(std::move(merged));
   }
@@ -341,7 +342,7 @@ Node::Ptr MergeTree(Node::Ptr l, Node::Ptr r)
 
   auto const & lRegion = l->GetData();
   auto const & rRegion = r->GetData();
-  if (lRegion.GetName() != rRegion.GetName())
+  if (lRegion.GetId() != rRegion.GetId())
     return nullptr;
 
   if (lRegion.GetArea() > rRegion.GetArea())
@@ -358,7 +359,7 @@ void NormalizeTree(Node::Ptr tree)
     return;
 
   auto & children = tree->GetChildren();
-  std::sort(std::begin(children), std::end(children), LessNodePtrByName);
+  std::sort(std::begin(children), std::end(children), LessNodePtrById);
   auto newChildren = NormalizeChildren(children, MergeTree);
   tree->SetChildren(std::move(newChildren));
   for (auto const & ch : tree->GetChildren())
@@ -366,31 +367,14 @@ void NormalizeTree(Node::Ptr tree)
 }
 }  // namespace
 
-CityPoint::CityPoint(FeatureBuilder1 const & fb, RegionDataProxy const & rd)
-  : m_name(fb.GetParams().name),
-    m_regionData(rd)
-{
-}
-
-Region::Region(FeatureBuilder1 const & fb, RegionDataProxy const & rd)
-  : m_name(fb.GetParams().name),
-    m_regionData(rd),
-    m_polygon(std::make_shared<BoostPolygon>())
-{
-  FillPolygon(fb);
-  auto rect = fb.GetLimitRect();
-  m_rect = BoostRect({{rect.minX(), rect.minY()}, {rect.maxX(), rect.maxY()}});
-  m_area = boost::geometry::area(*m_polygon);
-}
-
-std::string Region::GetName(int8_t lang) const
+std::string StringUtf8MultilangNamable::GetName(int8_t lang) const
 {
   std::string s;
   VERIFY(m_name.GetString(lang, s) != s.empty(), ());
   return s;
 }
 
-std::string Region::GetEnglishOrTransliteratedName() const
+std::string StringUtf8MultilangNamable::GetEnglishOrTransliteratedName() const
 {
   std::string s = GetName(StringUtf8Multilang::kEnglishCode);
   if (!s.empty())
@@ -409,6 +393,125 @@ std::string Region::GetEnglishOrTransliteratedName() const
 
   m_name.ForEach(fn);
   return s;
+}
+
+StringUtf8Multilang const & StringUtf8MultilangNamable::GetStringUtf8MultilangName() const
+{
+  return m_name;
+}
+
+void StringUtf8MultilangNamable::SetStringUtf8MultilangName(StringUtf8Multilang const & name)
+{
+  m_name = name;
+}
+
+base::GeoObjectId RegionDatable::GetId() const
+{
+  return m_regionData.GetOsmId();
+}
+
+bool RegionDatable::HasAdminCenter() const
+{
+  return m_regionData.HasAdminCenter();
+}
+
+base::GeoObjectId RegionDatable::GetAdminCenterId() const
+{
+  return m_regionData.GetAdminCenter();
+}
+
+bool RegionDatable::HasIsoCode() const
+{
+  return m_regionData.HasIsoCodeAlpha2();
+}
+
+std::string RegionDatable::GetIsoCode() const
+{
+  return m_regionData.GetIsoCodeAlpha2();
+}
+
+// The values ​​of the administrative level and place are indirectly dependent.
+// This is used when calculating the rank.
+uint8_t RegionDatable::GetRank() const
+{
+  auto const adminLevel = m_regionData.GetAdminLevel();
+  auto const placeType = m_regionData.GetPlaceType();
+
+  switch (placeType)
+  {
+  case PlaceType::City:
+  case PlaceType::Town:
+  case PlaceType::Village:
+  case PlaceType::Hamlet:
+  case PlaceType::Suburb:
+  case PlaceType::Neighbourhood:
+  case PlaceType::Locality:
+  case PlaceType::IsolatedDwelling: return static_cast<uint8_t>(placeType);
+  default: break;
+  }
+
+  switch (adminLevel)
+  {
+  case AdminLevel::Two:
+  case AdminLevel::Four:
+  case AdminLevel::Six: return static_cast<uint8_t>(adminLevel);
+  default: break;
+  }
+
+  return kNoRank;
+}
+
+std::string RegionDatable::GetLabel() const
+{
+  auto const adminLevel = m_regionData.GetAdminLevel();
+  auto const placeType = m_regionData.GetPlaceType();
+
+  switch (placeType)
+  {
+  case PlaceType::City:
+  case PlaceType::Town:
+  case PlaceType::Village:
+  case PlaceType::Hamlet: return "locality";
+  case PlaceType::Suburb:
+  case PlaceType::Neighbourhood: return "suburb";
+  case PlaceType::Locality:
+  case PlaceType::IsolatedDwelling: return "sublocality";
+  default: break;
+  }
+
+  switch (adminLevel)
+  {
+  case AdminLevel::Two: return "country";
+  case AdminLevel::Four: return "region";
+  case AdminLevel::Six: return "subregion";
+  default: break;
+  }
+
+  return "";
+}
+
+CityPoint::CityPoint(FeatureBuilder1 const & fb, RegionDataProxy const & rd)
+  : StringUtf8MultilangNamable(fb.GetParams().name),
+    RegionDatable(rd)
+{
+  auto const p = fb.GetKeyPoint();
+  m_center = {p.x, p.y};
+}
+
+BoostPoint CityPoint::GetCenter() const
+{
+  return m_center;
+}
+
+Region::Region(FeatureBuilder1 const & fb, RegionDataProxy const & rd)
+  : StringUtf8MultilangNamable(fb.GetParams().name),
+    RegionDatable(rd),
+    m_polygon(std::make_shared<BoostPolygon>())
+{
+  FillPolygon(fb);
+  auto rect = fb.GetLimitRect();
+  m_rect = BoostRect({{rect.minX(), rect.minY()}, {rect.maxX(), rect.maxY()}});
+  m_area = boost::geometry::area(*m_polygon);
 }
 
 void Region::DeletePolygon()
@@ -436,17 +539,7 @@ void Region::FillPolygon(FeatureBuilder1 const & fb)
 bool Region::IsCountry() const
 {
   static auto const kAdminLevelCountry = AdminLevel::Two;
-  return m_regionData.GetAdminLevel() == kAdminLevelCountry;
-}
-
-bool Region::HasIsoCode() const
-{
-  return m_regionData.HasIsoCodeAlpha2();
-}
-
-std::string Region::GetIsoCode() const
-{
-  return m_regionData.GetIsoCodeAlpha2();
+  return !HasAdminLevel() && m_regionData.GetAdminLevel() == kAdminLevelCountry;
 }
 
 bool Region::Contains(Region const & smaller) const
@@ -476,79 +569,19 @@ bool Region::ContainsRect(Region const & smaller) const
   return boost::geometry::covered_by(smaller.m_rect, m_rect);
 }
 
-// The values ​​of the administrative level and place are indirectly dependent.
-// This is used when calculating the rank.
-uint8_t Region::GetRank() const
-{
-  auto const adminLevel = m_regionData.GetAdminLevel();
-  auto const placeType = m_regionData.GetPlaceType();
-
-  switch (placeType)
-  {
-  case PlaceType::City:
-  case PlaceType::Town:
-  case PlaceType::Village:
-  case PlaceType::Hamlet:
-  case PlaceType::Suburb:
-  case PlaceType::Neighbourhood:
-  case PlaceType::Locality:
-  case PlaceType::IsolatedDwelling: return static_cast<uint8_t>(placeType);
-  default: break;
-  }
-
-  switch (adminLevel)
-  {
-  case AdminLevel::Two:
-  case AdminLevel::Four:
-  case AdminLevel::Six: return static_cast<uint8_t>(adminLevel);
-  default: break;
-  }
-
-  return kNoRank;
-}
-
-std::string Region::GetLabel() const
-{
-  auto const adminLevel = m_regionData.GetAdminLevel();
-  auto const placeType = m_regionData.GetPlaceType();
-
-  switch (placeType)
-  {
-  case PlaceType::City:
-  case PlaceType::Town:
-  case PlaceType::Village:
-  case PlaceType::Hamlet: return "locality";
-  case PlaceType::Suburb:
-  case PlaceType::Neighbourhood: return "suburb";
-  case PlaceType::Locality:
-  case PlaceType::IsolatedDwelling: return "sublocality";
-  default: break;
-  }
-
-  switch (adminLevel)
-  {
-  case AdminLevel::Two: return "country";
-  case AdminLevel::Four: return "region";
-  case AdminLevel::Six: return "subregion";
-  default: break;
-  }
-
-  return "";
-}
-
-Region::BoostPoint Region::GetCenter() const
+BoostPoint Region::GetCenter() const
 {
   BoostPoint p;
   boost::geometry::centroid(m_rect, p);
   return p;
 }
 
-Region::BoostRect const & Region::GetRect() const
+BoostRect const & Region::GetRect() const
 {
   return m_rect;
 }
 
-std::shared_ptr<Region::BoostPolygon> const Region::GetPolygon() const
+std::shared_ptr<BoostPolygon> const Region::GetPolygon() const
 {
   return m_polygon;
 }
@@ -558,25 +591,18 @@ double Region::GetArea() const
   return m_area;
 }
 
-base::GeoObjectId Region::GetId() const
+bool Region::Contains(CityPoint const & cityPoint) const
 {
-  return m_regionData.GetOsmId();
-}
+  CHECK(m_polygon, ());
 
-bool Region::HasAdminCenter() const
-{
-  return m_regionData.HasAdminCenter();
-}
-
-base::GeoObjectId Region::GetAdminCenterId() const
-{
-  return m_regionData.GetAdminCenter();
+  return boost::geometry::covered_by(cityPoint.GetCenter(), *m_polygon);
 }
 
 void Region::SetInfo(CityPoint const & cityPoint)
 {
-  m_name = cityPoint.m_name;
-  m_regionData = cityPoint.m_regionData;
+  SetStringUtf8MultilangName(cityPoint.GetStringUtf8MultilangName());
+  SetAdminLevel(cityPoint.GetAdminLevel());
+  SetPlaceType(cityPoint.GetPlaceType());
 }
 
 RegionsBuilder::RegionsBuilder(Regions && regions,
@@ -721,7 +747,7 @@ void RegionsBuilder::MakeCountryTrees(Regions const & regions)
 {
   std::vector<std::future<Node::Ptr>> results;
   {
-    auto const cpuCount = std::thread::hardware_concurrency();
+    auto const cpuCount = 1; //std::thread::hardware_concurrency();
     ASSERT_GREATER(cpuCount, 0, ());
     ThreadPool threadPool(cpuCount);
     for (auto const & country : GetCountries())
@@ -758,6 +784,7 @@ bool GenerateRegions(feature::GenerateInfo const & genInfo)
 
   FixRegions(regions, pointCitiesMap);
   FilterRegions(regions);
+
   auto jsonPolicy = std::make_unique<JsonPolicy>(genInfo.m_verbose);
   auto kvBuilder = std::make_unique<RegionsBuilder>(std::move(regions), std::move(jsonPolicy));
   auto const countryTrees = kvBuilder->GetCountryTrees();

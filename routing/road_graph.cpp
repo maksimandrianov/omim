@@ -52,7 +52,7 @@ Junction::Junction(m2::PointD const & point, feature::TAltitude altitude)
 string DebugPrint(Junction const & r)
 {
   ostringstream ss;
-  ss << "Junction{point:" << DebugPrint(r.m_point) << ", altitude:" << r.GetAltitude() << "}";
+  ss << "Junction{point:" << DebugPrint(MercatorBounds::ToLatLon(r.m_point)) << ", altitude:" << r.GetAltitude() << "}";
   return ss.str();
 }
 

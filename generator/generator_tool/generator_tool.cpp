@@ -289,9 +289,9 @@ int main(int argc, char ** argv)
 
     genInfo.m_fileName = FLAGS_output;
 
-    auto emitter = CreateEmitter(EmitterType::Region, genInfo);
-    if (!GenerateRegionFeatures(genInfo, emitter))
-      return -1;
+//    auto emitter = CreateEmitter(EmitterType::Region, genInfo);
+//    if (!GenerateRegionFeatures(genInfo, emitter))
+//      return -1;
   }
 
   if (genInfo.m_bucketNames.empty() && !FLAGS_output.empty())
