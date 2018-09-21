@@ -97,7 +97,7 @@ bool ExpandFake(Graph::EdgeVector & path, Graph::EdgeVector::iterator edgeIt, Da
                 Graph & g)
 {
   if (!edgeIt->IsFake())
-    return;
+    return true;
 
   Graph::EdgeVector edges;
   if (IsRealVertex(edgeIt->GetStartPoint(), edgeIt->GetFeatureId(), dataSource))
