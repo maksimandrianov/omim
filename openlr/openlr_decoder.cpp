@@ -120,6 +120,14 @@ void ExpandFake(Graph::EdgeVector & path, Graph::EdgeVector::iterator edgeIt, Da
 
   if (it != end(edges))
   {
+
+    find_if(begin(edges), end(edges), [&edgeIt](Graph::Edge const & real) {
+        LOG(LINFO, ("find_if:", real.GetFeatureId(), edgeIt->GetFeatureId(), real.GetSegId(), edgeIt->GetSegId()));
+        if (real.GetFeatureId() == edgeIt->GetFeatureId() && real.GetSegId() == edgeIt->GetSegId())
+          return true;
+        return false;
+      });
+
     LOG(LINFO, ("Size of edges:", edges.size()));
     LOG(LINFO, ("edges:", edges));
     LOG(LINFO, ("edgeId", *edgeIt));
@@ -138,11 +146,13 @@ void ExpandFake(Graph::EdgeVector & path, Graph::EdgeVector::iterator edgeIt, Da
 
 void ExpandFakes(DataSource const & dataSource, Graph & g, Graph::EdgeVector & path)
 {
-  ASSERT(!path.empty(), ());
+  CHECK(!path.empty(), ());
 
+  LOG(LINFO, ("ExpandFake(path, begin(path), dataSource, g);"));
   ExpandFake(path, begin(path), dataSource, g);
   if (path.empty())
     return;
+  LOG(LINFO, ("ExpandFake(path, --end(path), dataSource, g);"));
   ExpandFake(path, --end(path), dataSource, g);
 }
 
