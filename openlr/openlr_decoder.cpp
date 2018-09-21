@@ -118,7 +118,7 @@ void ExpandFake(Graph::EdgeVector & path, Graph::EdgeVector::iterator edgeIt, Da
       return false;
     });
 
-  if (it != end(edges))
+  if (it == end(edges))
   {
 
     find_if(begin(edges), end(edges), [&edgeIt](Graph::Edge const & real) {
