@@ -122,7 +122,12 @@ void ExpandFake(Graph::EdgeVector & path, Graph::EdgeVector::iterator edgeIt, Da
   {
 
     find_if(begin(edges), end(edges), [&edgeIt](Graph::Edge const & real) {
+
         LOG(LINFO, ("find_if:", real.GetFeatureId(), edgeIt->GetFeatureId(), real.GetSegId(), edgeIt->GetSegId()));
+
+        LOG(LINFO, ("real.GetFeatureId() == edgeIt->GetFeatureId():", real.GetFeatureId() == edgeIt->GetFeatureId()));
+        LOG(LINFO, ("real.GetSegId() == edgeIt->GetSegId():", real.GetSegId() == edgeIt->GetSegId()));
+
         if (real.GetFeatureId() == edgeIt->GetFeatureId() && real.GetSegId() == edgeIt->GetSegId())
           return true;
         return false;
