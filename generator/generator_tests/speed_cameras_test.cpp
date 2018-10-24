@@ -9,6 +9,8 @@
 #include "generator/maxspeeds_parser.hpp"
 #include "generator/metalines_builder.hpp"
 #include "generator/osm_source.hpp"
+#include "generator/translator_collection.hpp"
+#include "generator/translator_factory.hpp"
 
 #include "routing/speed_camera_ser_des.hpp"
 
@@ -173,8 +175,12 @@ void TestSpeedCameraSectionBuilding(string const & osmContent, CameraMap const &
 
   // Step 2. Generate binary file about cameras.
   {
-    auto emitter = CreateEmitter(EmitterType::Planet, genInfo);
-    TEST(GenerateFeatures(genInfo, emitter), ("Can not generate features for speed camera"));
+
+    CacheLoader cacheLoader(genInfo);
+    TranslatorCollection translators;
+    auto emitter = CreateEmitter(EmitterType::Area, genInfo);
+    translators.Append(CreateTranslator(TranslatorType::Area, emitter, cacheLoader.GetCache(), genInfo));
+    TEST(GenerateRaw(genInfo, translators), ("Can not generate features for speed camera"));
   }
 
   TEST(GenerateFinalFeatures(genInfo, country.GetCountryName(),

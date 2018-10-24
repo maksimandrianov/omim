@@ -348,29 +348,44 @@ bool IsDrawableForIndexClassifOnly(TypesHolder const & types, int level)
   return false;
 }
 
-bool RemoveUselessTypes(vector<uint32_t> & types, EGeomType geomType, bool emptyName)
+bool IsGoodTypes(uint32_t t, EGeomType geomType, bool emptyName)
 {
   Classificator const & c = classif();
 
+  if (IsUsefulNondrawableType(t, geomType))
+    return true;
+
+  IsDrawableLikeChecker doCheck(geomType, emptyName);
+  if (c.ProcessObjects(t, doCheck))
+    return true;
+
+  // IsDrawableLikeChecker checks only unique area styles,
+  // so we need to take into account point styles too.
+  if (geomType == GEOM_AREA)
+  {
+    IsDrawableLikeChecker doCheck(GEOM_POINT, emptyName);
+    if (c.ProcessObjects(t, doCheck))
+      return true;
+  }
+
+  return false;
+}
+
+bool HasGoodTypes(vector<uint32_t> const & types, EGeomType geomType, bool emptyNamee)
+{
+  if (types.empty())
+    return false;
+
+  return std::any_of(types.begin(), types.end(), [&](uint32_t t) {
+    return IsGoodTypes(t, geomType, emptyNamee);
+  });
+}
+
+bool RemoveUselessTypes(vector<uint32_t> & types, EGeomType geomType, bool emptyName)
+{
   types.erase(remove_if(types.begin(), types.end(), [&] (uint32_t t)
   {
-   if (IsUsefulNondrawableType(t, geomType))
-     return false;
-
-   IsDrawableLikeChecker doCheck(geomType, emptyName);
-   if (c.ProcessObjects(t, doCheck))
-     return false;
-
-   // IsDrawableLikeChecker checks only unique area styles,
-   // so we need to take into account point styles too.
-   if (geomType == GEOM_AREA)
-   {
-     IsDrawableLikeChecker doCheck(GEOM_POINT, emptyName);
-     if (c.ProcessObjects(t, doCheck))
-       return false;
-   }
-
-   return true;
+    return !IsGoodTypes(t, geomType, emptyName);
   }), types.end());
 
   return !types.empty();

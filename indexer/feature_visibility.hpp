@@ -34,6 +34,7 @@ namespace feature
   /// For FEATURE_TYPE_AREA removes line-drawing only types.
   bool RemoveUselessTypes(std::vector<uint32_t> & types, EGeomType geomType,
                           bool emptyName = false);
+  bool HasGoodTypes(vector<uint32_t> const & types, EGeomType geomType, bool emptyNamee = false);
   //@}
 
   int GetMinDrawableScale(FeatureType & ft);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "generator/collector_interface.hpp"
 #include "generator/intermediate_elements.hpp"
 #include "generator/osm_element.hpp"
 
@@ -42,14 +43,17 @@ private:
   std::map<uint64_t, RoadAccess::Type> m_barriers;
 };
 
-class RoadAccessWriter
+class RoadAccessWriter : public generator::CollectorInterface
 {
 public:
   RoadAccessWriter();
+  RoadAccessWriter(std::string const & filePath);
+
+  // CollectorInterface overrides:
+  void CollectFeature(FeatureBuilder1 const &, OsmElement const & elem) override;
+  void Save() override {}
 
   void Open(std::string const & filePath);
-
-  void Process(OsmElement const & elem);
 
 private:
   bool IsOpened() const;

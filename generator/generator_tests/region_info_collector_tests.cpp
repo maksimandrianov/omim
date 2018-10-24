@@ -24,13 +24,15 @@ using namespace base;
 namespace
 {
 auto const kNotExistingId = std::numeric_limits<uint64_t>::max();
-auto const kOsmElementEmpty = MakeOsmElement(0, {});
+auto const kOsmElementEmpty = MakeOsmElement(0, {}, OsmElement::EntityType::Relation);
 auto const kOsmElementCity = MakeOsmElement(1, {{"place", "city"},
-                                                {"admin_level", "6"}});
+                                                {"admin_level", "6"}},
+                                            OsmElement::EntityType::Relation);
 auto const kOsmElementCountry = MakeOsmElement(2, {{"admin_level", "2"},
                                                    {"ISO3166-1:alpha2", "RU"},
                                                    {"ISO3166-1:alpha3", "RUS"},
-                                                   {"ISO3166-1:numeric", "643"}});
+                                                   {"ISO3166-1:numeric", "643"}},
+                                               OsmElement::EntityType::Relation);
 
 }  // namespace
 
@@ -38,9 +40,9 @@ UNIT_TEST(RegionInfoCollector_Collect)
 {
   auto const filename = GetFileName();
   CollectorRegionInfo regionInfoCollector(filename);
-  regionInfoCollector.Collect(MakeOsmRelation(kOsmElementCity.id), kOsmElementCity);
-  regionInfoCollector.Collect(MakeOsmRelation(kOsmElementCountry.id), kOsmElementCountry);
-  regionInfoCollector.Collect(MakeOsmRelation(kOsmElementEmpty.id), kOsmElementEmpty);
+  regionInfoCollector.Collect(kOsmElementCity);
+  regionInfoCollector.Collect(kOsmElementCountry);
+  regionInfoCollector.Collect(kOsmElementEmpty);
   regionInfoCollector.Save();
 
   RegionInfo regionInfo(filename);
@@ -83,7 +85,7 @@ UNIT_TEST(RegionInfoCollector_Get)
 {
   auto const filename = GetFileName();
   CollectorRegionInfo regionInfoCollector(filename);
-  regionInfoCollector.Collect(MakeOsmRelation(kOsmElementCity.id), kOsmElementCity);
+  regionInfoCollector.Collect(kOsmElementCity);
   regionInfoCollector.Save();
 
   RegionInfo regionInfo(filename);
@@ -97,8 +99,8 @@ UNIT_TEST(RegionInfoCollector_Exists)
 {
   auto const filename = GetFileName();
   CollectorRegionInfo regionInfoCollector(filename);
-  regionInfoCollector.Collect(MakeOsmRelation(kOsmElementCity.id), kOsmElementCity);
-  regionInfoCollector.Collect(MakeOsmRelation(kOsmElementCountry.id), kOsmElementCountry);
+  regionInfoCollector.Collect(kOsmElementCity);
+  regionInfoCollector.Collect(kOsmElementCountry);
   regionInfoCollector.Save();
 
   RegionInfo regionInfo(filename);

@@ -528,7 +528,7 @@ if [ -z "${VERSION-}" ]; then
     COUNTRIES_VERSION="$(format_version "$PLANET_VERSION" "$COUNTRIES_VERSION_FORMAT")"
   fi
 fi
-
+exit 0
 if [ "$MODE" == "mwm" ]; then
   putmode "Step 5: Building all MWMs of regions and of the whole world into $TARGET"
   # First, check for *.mwm.tmp

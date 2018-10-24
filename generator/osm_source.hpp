@@ -2,7 +2,9 @@
 
 #include "generator/emitter_interface.hpp"
 #include "generator/generate_info.hpp"
+#include "generator/intermediate_data.hpp"
 #include "generator/osm_element.hpp"
+#include "generator/translator_collection.hpp"
 
 #include <functional>
 #include <iostream>
@@ -10,6 +12,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "boost/noncopyable.hpp"
 
 class FeatureBuilder1;
 class FeatureParams;
@@ -39,7 +43,28 @@ public:
   uint64_t Read(char * buffer, uint64_t bufferSize);
 };
 
-bool GenerateFeatures(feature::GenerateInfo & info, std::shared_ptr<EmitterInterface> emitter);
+class LoaderWrapper
+{
+public:
+  LoaderWrapper(feature::GenerateInfo & info);
+  cache::IntermediateDataReader & GetReader();
+
+private:
+  cache::IntermediateDataReader m_reader;
+};
+
+class CacheLoader : boost::noncopyable
+{
+public:
+  CacheLoader(feature::GenerateInfo & info);
+  cache::IntermediateDataReader & GetCache();
+
+private:
+  feature::GenerateInfo & m_info;
+  std::unique_ptr<LoaderWrapper> m_loader;
+};
+
+bool GenerateRaw(feature::GenerateInfo & info, TranslatorCollection & translators);
 bool GenerateRegionFeatures(feature::GenerateInfo & info);
 bool GenerateGeoObjectsFeatures(feature::GenerateInfo & info);
 

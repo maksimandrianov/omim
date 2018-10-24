@@ -13,7 +13,7 @@
 #include "generator/osm_o5m_source.hpp"
 #include "generator/osm_xml_source.hpp"
 #include "generator/polygonizer.hpp"
-#include "generator/regions/collector_region_info.hpp"
+#include "generator/relation_tags_enricher.hpp"
 #include "generator/tag_admixer.hpp"
 #include "generator/towns_dumper.hpp"
 #include "generator/translator_factory.hpp"
@@ -227,121 +227,53 @@ void ProcessOsmElementsFromO5M(SourceReader & stream, function<void(OsmElement *
 // Generate functions implementations.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-using PreEmit = function<bool(OsmElement *)>;
-
-// static
-static bool GenerateRaw(feature::GenerateInfo & info, PreEmit const & preEmit,
-                        std::vector<std::shared_ptr<TranslatorInterface>> translators)
+bool GenerateRaw(feature::GenerateInfo & info, TranslatorCollection & translators)
 {
-  // todo(maksimandrianov): Add support for multiple translators.
-  CHECK_EQUAL(translators.size(), 1, ("Only one translator is supported."));
+  CHECK(!translators.Empty(), ());
 
-  try
+  auto const fn = [&](OsmElement * e) {
+    translators.EmitElement(e);
+  };
+
+  SourceReader reader = info.m_osmFileName.empty() ? SourceReader() : SourceReader(info.m_osmFileName);
+  switch (info.m_osmFileType)
   {
-    auto const fn = [&](OsmElement * e) {
-      if (!preEmit(e))
-        return;
-
-      for (auto & translator : translators)
-        translator->EmitElement(e);
-    };
-
-    SourceReader reader = info.m_osmFileName.empty() ? SourceReader() : SourceReader(info.m_osmFileName);
-    switch (info.m_osmFileType)
-    {
-    case feature::GenerateInfo::OsmSourceType::XML:
-      ProcessOsmElementsFromXML(reader, fn);
-      break;
-    case feature::GenerateInfo::OsmSourceType::O5M:
-      ProcessOsmElementsFromO5M(reader, fn);
-      break;
-    }
-
-    LOG(LINFO, ("Processing", info.m_osmFileName, "done."));
-
-    MixFakeNodes(GetPlatform().ResourcesDir() + MIXED_NODES_FILE, fn);
-
-    // Stop if coasts are not merged and FLAG_fail_on_coasts is set
-    for (auto & translator : translators)
-    {
-      if (!translator->Finish())
-        return false;
-    }
-
-    for (auto & translator : translators)
-      translator->GetNames(info.m_bucketNames);
-  }
-  catch (Reader::Exception const & ex)
-  {
-    LOG(LCRITICAL, ("Error with file", ex.Msg()));
+  case feature::GenerateInfo::OsmSourceType::XML:
+    ProcessOsmElementsFromXML(reader, fn);
+    break;
+  case feature::GenerateInfo::OsmSourceType::O5M:
+    ProcessOsmElementsFromO5M(reader, fn);
+    break;
   }
 
+  LOG(LINFO, ("Processing", info.m_osmFileName, "done."));
+  MixFakeNodes(GetPlatform().ResourcesDir() + MIXED_NODES_FILE, fn);
+  if (!translators.Finish())
+    return false;
+
+  translators.GetNames(info.m_bucketNames);
   return true;
 }
 
-static cache::IntermediateDataReader LoadCache(feature::GenerateInfo & info)
+LoaderWrapper::LoaderWrapper(feature::GenerateInfo & info)
+  : m_reader(cache::CreatePointStorageReader(info.m_nodeStorageType, info.GetIntermediateFileName(NODES_FILE)), info)
 {
-  auto nodes = cache::CreatePointStorageReader(info.m_nodeStorageType,
-                                               info.GetIntermediateFileName(NODES_FILE));
-  cache::IntermediateDataReader cache(nodes, info);
-  cache.LoadIndex();
-  return cache;
+  m_reader.LoadIndex();
 }
 
-bool GenerateFeatures(feature::GenerateInfo & info, shared_ptr<EmitterInterface> emitter)
+cache::IntermediateDataReader & LoaderWrapper::GetReader()
 {
-  TagAdmixer tagAdmixer(info.GetIntermediateFileName("ways", ".csv"),
-                        info.GetIntermediateFileName("towns", ".csv"));
-  TagReplacer tagReplacer(GetPlatform().ResourcesDir() + REPLACED_TAGS_FILE);
-  OsmTagMixer osmTagMixer(GetPlatform().ResourcesDir() + MIXED_TAGS_FILE);
-  FilterElements filterElements(GetPlatform().ResourcesDir() + SKIPPED_ELEMENTS_FILE);
-
-  auto preEmit = [&](OsmElement * e) {
-    if (filterElements.NeedSkip(*e))
-      return false;
-
-    // Here we can add new tags to the elements!
-    tagReplacer(e);
-    tagAdmixer(e);
-    osmTagMixer(e);
-    return true;
-  };
-
-  auto cache = LoadCache(info);
-  auto translator = CreateTranslator(TranslatorType::Planet, emitter, cache, info);
-  return GenerateRaw(info, preEmit, {translator, });
+  return m_reader;
 }
 
-bool GenerateRegionFeatures(feature::GenerateInfo & info)
-{
-  auto const preEmit = [](OsmElement * e)
-  {
-    UNUSED_VALUE(e);
-    return true;
-  };
-  auto cache = LoadCache(info);
-  std::vector<std::shared_ptr<TranslatorInterface>> translators;
-  auto emitter = CreateEmitter(EmitterType::Simple, info);
-  auto const filename = info.GetTmpFileName(info.m_fileName, regions::CollectorRegionInfo::kDefaultExt);
-  auto collector = std::make_shared<regions::CollectorRegionInfo>(filename);
-  auto translator = CreateTranslator(TranslatorType::Region, emitter, cache, collector);
-  translators.emplace_back(translator);
-  return GenerateRaw(info, preEmit, translators);
-}
+CacheLoader::CacheLoader(feature::GenerateInfo & info) : m_info(info) {}
 
-bool GenerateGeoObjectsFeatures(feature::GenerateInfo & info)
+cache::IntermediateDataReader & CacheLoader::GetCache()
 {
-  auto const preEmit = [](OsmElement * e)
-  {
-    UNUSED_VALUE(e);
-    return true;
-  };
-  auto cache = LoadCache(info);
-  std::vector<std::shared_ptr<TranslatorInterface>> translators;
-  auto emitter = CreateEmitter(EmitterType::Simple, info);
-  auto translator = CreateTranslator(TranslatorType::GeoObjects, emitter, cache);
-  translators.emplace_back(translator);
-  return GenerateRaw(info, preEmit, translators);
+    if (!m_loader)
+      m_loader = std::make_unique<LoaderWrapper>(m_info);
+
+    return m_loader->GetReader();
 }
 
 bool GenerateIntermediateData(feature::GenerateInfo & info)
