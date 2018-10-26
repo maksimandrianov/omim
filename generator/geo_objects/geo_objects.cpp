@@ -1,6 +1,7 @@
 #include "generator/geo_objects/geo_objects.hpp"
 
 #include "generator/feature_builder.hpp"
+#include "generator/feature_generator.hpp"
 #include "generator/locality_sorter.hpp"
 #include "generator/regions/region_base.hpp"
 
@@ -453,6 +454,51 @@ bool BuildGeoObjectsWithoutAddresses(indexer::GeoObjectsIndex<IndexReader> const
 
   return true;
 }
+
+void FilterByCountryAndRepackMwm(std::string const & srcFilename, KeyValueMem const & regionKv,
+                                 indexer::RegionsIndex<IndexReader> const & regionIndex)
+{
+  auto const path = Platform().TmpPathForFile();
+  {
+    feature::FeaturesCollector collector(path);
+    auto const toDo = [&](FeatureBuilder1 const & fb, uint64_t /* currPos */)
+    {
+      if (HasHouse(fb))
+      {
+        collector(fb);
+        return;
+      }
+
+      auto region = FindRegion(fb, regionIndex, regionKv);
+      if (!region)
+        return;
+
+      auto properties = json_object_get(region->get(), "properties");
+      auto address = json_object_get(properties, "address");
+      auto country = json_object_get(address, "country");
+      if (!country)
+        return;
+
+      char const * str = json_string_value(country);
+      if (!str)
+        return;
+
+      if (std::strcmp(str, "Россия") == 0 &&
+          std::strcmp(str, "Україна") == 0 &&
+          std::strcmp(str, "Беларусь") == 0)
+      {
+        collector(fb);
+      }
+
+    };
+
+    feature::ForEachFromDatRawFormat(srcFilename, toDo);
+  }
+
+  Platform().RemoveFileIfExists(srcFilename);
+  if (std::rename(path.c_str(), srcFilename.c_str()) != 0)
+    LOG(LERROR, ("Error: Cannot rename", path, "to", srcFilename));
+}
 }  // namespace
 
 namespace generator
@@ -471,13 +517,14 @@ bool GenerateGeoObjects(std::string const & pathInRegionsIndx,
     LOG(LINFO, ("Finish generating geo objects.", timer.ElapsedSeconds(), "seconds."));
   });
 
-  auto geoObjectIndexFuture = std::async(std::launch::async, MakeTempGeoObjectsIndex,
-                                         pathInGeoObjectsTmpMwm);
   auto const regionIndex =
       indexer::ReadIndex<indexer::RegionsIndexBox<IndexReader>, MmapReader>(pathInRegionsIndx);
   // Regions key-value storage is small (~150 Mb). We will load everything into memory.
   std::fstream streamRegionKv(pathInRegionsKv);
   KeyValueMem const regionsKv(streamRegionKv);
+  FilterByCountryAndRepackMwm(pathInGeoObjectsTmpMwm, regionsKv, regionIndex);
+  auto geoObjectIndexFuture = std::async(std::launch::async, MakeTempGeoObjectsIndex,
+                                         pathInGeoObjectsTmpMwm);
   LOG(LINFO, ("Size of regions key-value storage:", regionsKv.Size()));
   std::ofstream streamIdsWithoutAddress(pathOutIdsWithoutAddress);
   std::ofstream streamGeoObjectsKv(pathOutGeoObjectsKv);
