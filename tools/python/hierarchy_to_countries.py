@@ -19,11 +19,12 @@ import sys, json, re
 from optparse import OptionParser
 import os.path
 import codecs
+import hashlib
 
 class CountryDict(dict):
   def __init__(self, *args, **kwargs):
     dict.__init__(self, *args, **kwargs)
-    self.order = ['id',  'n', 'f', 'v', 'c', 's', 'rs', 'g']
+    self.order = ['id',  'n', 'f', 'v', 'c', 's', 'sha1', 'rs', 'g']
 
   def __iter__(self):
     for key in self.order:
@@ -36,6 +37,16 @@ class CountryDict(dict):
   def iteritems(self):
     for key in self.__iter__():
       yield (key, self.__getitem__(key))
+
+def get_sha1(path, name):
+  if path == '0':
+    return ''
+  filename = os.path.join(path, '{0}.mwm'.format(name)) 
+  h = hashlib.sha1()
+  with open(filename, 'rb') as f:
+    for chunk in iter(lambda: f.read(4096), b""):
+      h.update(chunk)
+    return h.hexdigest()
 
 def get_size(path, name):
   if path == '0':
@@ -100,6 +111,7 @@ if options.old:
       if m:
         if m.group(2) in oldvs:
           oldvs[m.group(2)].append(m.group(1))
+          oldvs[m.group(2)].append(m.group(1))
         else:
           oldvs[m.group(2)] = [m.group(1)]
 
@@ -144,7 +156,9 @@ with open(options.hierarchy, 'r') as f:
             del last['f']
           stack.append(last)
         else:
-          last['s'] = get_size(mwmpath, last['f' if 'f' in last else nameattr])
+          name = last['f' if 'f' in last else nameattr]
+          last['s'] = get_size(mwmpath, name)
+          last['h'] = get_hash(mwmpath, name)
           if options.legacy:
             last['rs'] = 0
           if last['s'] >= 0:
@@ -170,7 +184,9 @@ with open(options.hierarchy, 'r') as f:
 
 # the last line is always a file
 del last['d']
-last['s'] = get_size(mwmpath, last['f' if 'f' in last else nameattr])
+name = last['f' if 'f' in last else nameattr]
+last['s'] = get_size(mwmpath, name)
+last['h'] = get_hash(mwmpath, name)
 if options.legacy:
   last['rs'] = 0
 if last['s'] >= 0:
@@ -187,4 +203,3 @@ if options.output:
   with codecs.open(options.output, 'w', 'utf-8') as f:
     json.dump(stack[-1], f, ensure_ascii=True, indent=1)
 else:
-  print(json.dumps(stack[-1], ensure_ascii=True, indent=1))
