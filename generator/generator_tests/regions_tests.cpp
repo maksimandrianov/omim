@@ -204,7 +204,7 @@ UNIT_TEST(RegionsBuilderTest_GetCountryTrees)
   std::vector<std::string> bankOfNames;
   RegionsBuilder builder(MakeTestDataSet1(collector), std::make_unique<Helper>(bankOfNames));
   builder.MakeCountryTrees();
-  auto const countryTrees = builder.GetCountryTrees();
+  auto const countryTrees = builder.MakeCountryTrees();
   for (auto const & countryName : builder.GetCountryNames())
   {
     auto const keyRange = countryTrees.equal_range(countryName);
