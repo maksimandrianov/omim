@@ -218,6 +218,9 @@ void RegionsBuilder::MakeCountryTrees()
   for (auto & result : BuildCountryRegionTrees(GetCountries()))
 {
   m_countryTrees.clear();
+  for (auto & result : BuildCountryRegionTrees(GetCountries()))
+{
+  m_countryTrees.clear();
   for (auto && tree : BuildCountryRegionTrees(GetCountries()))
     m_countryTrees.emplace(tree->GetData().GetName(), std::move(tree));
 }
