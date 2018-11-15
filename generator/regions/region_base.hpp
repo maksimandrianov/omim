@@ -33,8 +33,8 @@ struct RegionWithName
   // 3. Otherwise, return empty string.
   std::string GetEnglishOrTransliteratedName() const;
   std::string GetName(int8_t lang = StringUtf8Multilang::kDefaultCode) const;
-  StringUtf8Multilang const & GetStringUtf8MultilangName() const;
-  void SetStringUtf8MultilangName(StringUtf8Multilang const & name);
+  StringUtf8Multilang const & GetMultilangName() const;
+  void SetMultilangName(StringUtf8Multilang const & name);
 
 protected:
   StringUtf8Multilang m_name;
@@ -65,6 +65,8 @@ struct RegionWithData
 
   bool HasAdminLevel() const { return m_regionData.HasAdminLevel(); }
   bool HasPlaceType() const { return m_regionData.HasPlaceType(); }
+
+  RegionDataProxy const & GetRegionData() const { return m_regionData; }
 
 protected:
   RegionDataProxy m_regionData;

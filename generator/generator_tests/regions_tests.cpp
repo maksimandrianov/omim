@@ -203,7 +203,7 @@ UNIT_TEST(RegionsBuilderTest_GetCountryTrees)
   RegionInfo collector(filename);
   std::vector<std::string> bankOfNames;
   RegionsBuilder builder(MakeTestDataSet1(collector), std::make_unique<Helper>(bankOfNames));
-
+  builder.MakeCountryTrees();
   auto const countryTrees = builder.GetCountryTrees();
   for (auto const & countryName : builder.GetCountryNames())
   {

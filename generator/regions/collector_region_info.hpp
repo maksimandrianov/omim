@@ -60,6 +60,7 @@ enum class PlaceType: uint8_t
 PlaceType EncodePlaceType(std::string const & place);
 
 class RegionDataProxy;
+class ConstRegionDataProxy;
 
 // Codes for the names of countries, dependent territories, and special areas of geographical
 // interest.
@@ -148,9 +149,11 @@ public:
   explicit RegionInfo(Platform::FilesList const & filenames);
 
   RegionDataProxy Get(base::GeoObjectId const & osmId);
+  ConstRegionDataProxy Get(base::GeoObjectId const & osmId) const;
 
 private:
   friend class RegionDataProxy;
+  friend class ConstRegionDataProxy;
 
   template <typename Source, typename Map>
   void ReadMap(Source & src, Map & seq)
@@ -206,6 +209,39 @@ private:
   MapIsoCode const & GetMapIsoCode() const;
 
   std::reference_wrapper<RegionInfo> m_regionInfoCollector;
+  base::GeoObjectId m_osmId;
+};
+
+class ConstRegionDataProxy
+{
+public:
+  ConstRegionDataProxy(RegionInfo const & regionInfoCollector, base::GeoObjectId const & osmId);
+
+  base::GeoObjectId const & GetOsmId() const;
+  AdminLevel GetAdminLevel() const;
+  PlaceType GetPlaceType() const;
+
+  bool HasAdminLevel() const;
+  bool HasPlaceType() const;
+
+  bool HasIsoCodeAlpha2() const;
+  bool HasIsoCodeAlpha3() const;
+  bool HasIsoCodeAlphaNumeric() const;
+
+  std::string GetIsoCodeAlpha2() const;
+  std::string GetIsoCodeAlpha3() const;
+  std::string GetIsoCodeAlphaNumeric() const;
+
+  bool HasAdminCenter() const;
+  base::GeoObjectId GetAdminCenter() const;
+
+private:
+  bool HasIsoCode() const;
+  RegionInfo const & GetCollector() const;
+  MapRegionData const & GetMapRegionData() const;
+  MapIsoCode const & GetMapIsoCode() const;
+
+  std::reference_wrapper<RegionInfo const> m_regionInfoCollector;
   base::GeoObjectId m_osmId;
 };
 

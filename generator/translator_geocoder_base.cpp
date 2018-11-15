@@ -79,6 +79,9 @@ bool TranslatorGeocoderBase::ParseParams(OsmElement * p, FeatureParams & params)
 
 void TranslatorGeocoderBase::Emit(FeatureBuilder1 & fb, OsmElement const * p)
 {
+  if (fb.GetMostGenericOsmId().GetEncodedId() == 4611686019715239870)
+    std::cout << 1;
+
   auto const id = fb.GetMostGenericOsmId();
   for (auto const & collector : m_collectors)
     collector->Collect(id, *p);

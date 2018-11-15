@@ -27,6 +27,7 @@ struct Node
   void SetParent(Ptr parent) { m_parent = parent; }
   Ptr GetParent() const { return m_parent.lock(); }
   Region & GetData() { return m_region; }
+  void ShrinkToFitChildren() { PtrList(m_children).swap(m_children); }
 
 private:
   Region m_region;

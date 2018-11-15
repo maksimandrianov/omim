@@ -163,12 +163,14 @@ RegionDataProxy RegionInfo::Get(base::GeoObjectId const & osmId)
   return RegionDataProxy(*this, osmId);
 }
 
+ConstRegionDataProxy RegionInfo::Get(base::GeoObjectId const & osmId) const
+{
+  return ConstRegionDataProxy(*this, osmId);
+}
+
 RegionDataProxy::RegionDataProxy(RegionInfo & regionInfoCollector,
                                  base::GeoObjectId const & osmId)
-  : m_regionInfoCollector(regionInfoCollector),
-    m_osmId(osmId)
-{
-}
+  : m_regionInfoCollector(regionInfoCollector), m_osmId(osmId) {}
 
 RegionInfo const & RegionDataProxy::GetCollector() const
 {
@@ -185,12 +187,10 @@ MapRegionData & RegionDataProxy::GetMapRegionData()
   return GetCollector().m_mapRegionData;
 }
 
-
 MapRegionData const & RegionDataProxy::GetMapRegionData() const
 {
   return GetCollector().m_mapRegionData;
 }
-
 
 MapIsoCode const & RegionDataProxy::GetMapIsoCode() const
 {
@@ -276,6 +276,98 @@ bool RegionDataProxy::HasAdminCenter() const
 }
 
 base::GeoObjectId RegionDataProxy::GetAdminCenter() const
+{
+  return GetMapRegionData().at(m_osmId).m_osmIdAdminCenter.GetId();
+}
+
+ConstRegionDataProxy::ConstRegionDataProxy(RegionInfo const & regionInfoCollector,
+                                           base::GeoObjectId const & osmId)
+  : m_regionInfoCollector(regionInfoCollector), m_osmId(osmId) {}
+
+RegionInfo const & ConstRegionDataProxy::GetCollector() const
+{
+  return m_regionInfoCollector;
+}
+
+MapRegionData const & ConstRegionDataProxy::GetMapRegionData() const
+{
+  return GetCollector().m_mapRegionData;
+}
+
+MapIsoCode const & ConstRegionDataProxy::GetMapIsoCode() const
+{
+  return GetCollector().m_mapIsoCode;
+}
+
+base::GeoObjectId const & ConstRegionDataProxy::GetOsmId() const
+{
+  return m_osmId;
+}
+
+AdminLevel ConstRegionDataProxy::GetAdminLevel() const
+{
+  return GetMapRegionData().at(m_osmId).m_adminLevel;
+}
+
+PlaceType ConstRegionDataProxy::GetPlaceType() const
+{
+  return GetMapRegionData().at(m_osmId).m_place;
+}
+
+bool ConstRegionDataProxy::HasAdminLevel() const
+{
+  return (GetMapRegionData().count(m_osmId) != 0) &&
+      (GetMapRegionData().at(m_osmId).m_adminLevel != AdminLevel::Unknown);
+}
+
+bool ConstRegionDataProxy::HasPlaceType() const
+{
+  return (GetMapRegionData().count(m_osmId) != 0) &&
+      (GetMapRegionData().at(m_osmId).m_place != PlaceType::Unknown);
+}
+
+bool ConstRegionDataProxy::HasIsoCode() const
+{
+  return GetMapIsoCode().count(m_osmId) != 0;
+}
+
+bool ConstRegionDataProxy::HasIsoCodeAlpha2() const
+{
+  return HasIsoCode() && GetMapIsoCode().at(m_osmId).HasAlpha2();
+}
+
+bool ConstRegionDataProxy::HasIsoCodeAlpha3() const
+{
+  return HasIsoCode() && GetMapIsoCode().at(m_osmId).HasAlpha3();
+}
+
+bool ConstRegionDataProxy::HasIsoCodeAlphaNumeric() const
+{
+  return HasIsoCode() && GetMapIsoCode().at(m_osmId).HasNumeric();
+}
+
+std::string ConstRegionDataProxy::GetIsoCodeAlpha2() const
+{
+  return GetMapIsoCode().at(m_osmId).GetAlpha2();
+}
+
+std::string ConstRegionDataProxy::GetIsoCodeAlpha3() const
+{
+  return GetMapIsoCode().at(m_osmId).GetAlpha3();
+}
+
+std::string ConstRegionDataProxy::GetIsoCodeAlphaNumeric() const
+{
+  return GetMapIsoCode().at(m_osmId).GetNumeric();
+}
+
+bool ConstRegionDataProxy::HasAdminCenter() const
+{
+  return (GetMapRegionData().count(m_osmId) != 0) &&
+      (GetMapRegionData().at(m_osmId).m_osmIdAdminCenter.HasId());
+}
+
+base::GeoObjectId ConstRegionDataProxy::GetAdminCenter() const
 {
   return GetMapRegionData().at(m_osmId).m_osmIdAdminCenter.GetId();
 }

@@ -109,6 +109,8 @@ set(SRC
   regions/regions.hpp
   regions/regions_builder.cpp
   regions/regions_builder.hpp
+  regions/regions_fixer.cpp
+  regions/regions_fixer.hpp
   regions/to_string_policy.cpp
   regions/to_string_policy.hpp
   restriction_collector.cpp
