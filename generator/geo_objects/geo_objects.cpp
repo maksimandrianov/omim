@@ -483,8 +483,8 @@ void FilterByCountryAndRepackMwm(std::string const & srcFilename, KeyValueMem co
       if (!str)
         return;
 
-      if (std::strcmp(str, "Россия") == 0 &&
-          std::strcmp(str, "Україна") == 0 &&
+      if (std::strcmp(str, "Россия") == 0 ||
+          std::strcmp(str, "Україна") == 0 ||
           std::strcmp(str, "Беларусь") == 0)
       {
         collector(fb);

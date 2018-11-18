@@ -59,14 +59,14 @@ Region::Region(City const & city)
   , RegionWithData(city.GetRegionData())
   , m_polygon(std::make_shared<BoostPolygon>())
 {
-  auto const radius = GetRediusByPlaceType(city.GetPlaceType());
+  auto const radius = GetRadiusByPlaceType(city.GetPlaceType());
   MakePolygonWithRadius(city.GetCenter(), *m_polygon, radius);
   boost::geometry::envelope(*m_polygon, m_rect);
   m_area = boost::geometry::area(*m_polygon);
 }
 
 // static
-double Region::GetRediusByPlaceType(PlaceType place)
+double Region::GetRadiusByPlaceType(PlaceType place)
 {
   // Based on average radiuses of OSM place polygons.
   switch (place)
@@ -197,7 +197,7 @@ bool FeatureCityPointToRegion(RegionInfo const & regionInfo, FeatureBuilder1 & f
   if (placeType == PlaceType::Locality || placeType == PlaceType::Unknown)
     return false;
 
-  auto const radius = Region::GetRediusByPlaceType(placeType);
+  auto const radius = Region::GetRadiusByPlaceType(placeType);
   MakePolygonWithRadius({center.x, center.y}, polygon, radius);
   auto const & outer = polygon.outer();
   FeatureBuilder1::PointSeq seq;

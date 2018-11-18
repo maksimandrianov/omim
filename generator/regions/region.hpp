@@ -36,7 +36,7 @@ struct Region : public RegionWithName, public RegionWithData
   double GetArea() const { return m_area; }
   // This function uses heuristics and assigns a radius according to the tag place.
   // The radius will be returned in mercator.
-  static double GetRediusByPlaceType(PlaceType place);
+  static double GetRadiusByPlaceType(PlaceType place);
 
 private:
   void FillPolygon(FeatureBuilder1 const & fb);
