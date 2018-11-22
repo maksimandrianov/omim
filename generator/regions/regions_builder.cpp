@@ -215,12 +215,6 @@ std::vector<Node::Ptr> RegionsBuilder::BuildCountryRegionTrees(RegionsBuilder::R
 void RegionsBuilder::MakeCountryTrees()
 {
   m_countryTrees.clear();
-  for (auto & result : BuildCountryRegionTrees(GetCountries()))
-{
-  m_countryTrees.clear();
-  for (auto & result : BuildCountryRegionTrees(GetCountries()))
-{
-  m_countryTrees.clear();
   for (auto && tree : BuildCountryRegionTrees(GetCountries()))
     m_countryTrees.emplace(tree->GetData().GetName(), std::move(tree));
 }
