@@ -69,7 +69,7 @@ public:
 
     size_t countOfFixedRegions = 0;
     auto const kMultCoeff = 10.0;
-    auto const kMaxAvaliableArea = kMultCoeff * M_PI * std::pow(Region::GetRediusByPlaceType(PlaceType::City), 2);
+    auto const kMaxAvaliableArea = kMultCoeff * M_PI * std::pow(Region::GetRadiusByPlaceType(PlaceType::City), 2);
     for (size_t i = 0; i < m_regionsWithAdminCenter.size(); ++i)
     {
       auto & regionWithAdminCenter = m_regionsWithAdminCenter[i];
