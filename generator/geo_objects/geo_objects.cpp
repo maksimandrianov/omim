@@ -473,7 +473,7 @@ void FilterByCountryAndRepackMwm(std::string const & srcFilename, KeyValueMem co
       if (!region)
         return;
 
-      auto properties = json_object_get(region->get(), "properties");
+      auto properties = json_object_get((*region).second.get(), "properties");
       auto address = json_object_get(properties, "address");
       auto country = json_object_get(address, "country");
       if (!country)
