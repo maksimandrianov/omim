@@ -167,6 +167,14 @@ bool Region::Contains(City const & cityPoint) const
       boost::geometry::covered_by(cityPoint.GetCenter(), *m_polygon);
 }
 
+bool Region::Contains(BoostPoint const & point) const
+{
+  CHECK(m_polygon, ());
+
+  return boost::geometry::covered_by(point, m_rect) &&
+      boost::geometry::covered_by(point, *m_polygon);
+}
+
 void SetCityBestAttributesToRegion(City const & cityPoint, Region & region)
 {
   region.SetMultilangName(cityPoint.GetMultilangName());

@@ -56,6 +56,7 @@ struct RegionWithData
   // rank of the second object, then the first object is considered more nested.
   uint8_t GetRank() const;
   std::string GetLabel() const;
+  size_t GetWeight() const;
 
   AdminLevel GetAdminLevel() const { return m_regionData.GetAdminLevel(); }
   PlaceType GetPlaceType() const { return m_regionData.GetPlaceType(); }

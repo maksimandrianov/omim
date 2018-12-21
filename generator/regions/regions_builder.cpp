@@ -143,8 +143,11 @@ Node::Ptr RegionsBuilder::BuildCountryRegionTree(Region const & country,
       // We believe that if one polygon overlaps by 98 percent, then we can assume that one
       // contains another.
       // auto const kAvaliableOverlapPercentage = 98;
-      if (currRegion.Contains(firstRegion) /* ||
-           currRegion.CalculateOverlapPercentage(firstRegion) > kAvaliableOverlapPercentage*/ )
+      if (currRegion.Contains(firstRegion) ||
+          (firstRegion.GetWeight() < firstRegion.GetWeight() &&
+           currRegion.Contains(firstRegion.GetCenter()) &&
+           currRegion.CalculateOverlapPercentage(firstRegion) > 50.0)/* ||
+               currRegion.CalculateOverlapPercentage(firstRegion) > kAvaliableOverlapPercentage*/ )
       {
         // In general, we assume that a region with the larger rank has the larger area.
         // But sometimes it does not. In this case, we will make an inversion.

@@ -130,5 +130,34 @@ std::string RegionWithData::GetLabel() const
 
   return "";
 }
+
+size_t RegionWithData::GetWeight() const
+{
+  auto const adminLevel = GetAdminLevel();
+  auto const placeType = GetPlaceType();
+
+  switch (placeType)
+  {
+  case PlaceType::City:
+  case PlaceType::Town:
+  case PlaceType::Village:
+  case PlaceType::Hamlet: return 3;
+  case PlaceType::Suburb:
+  case PlaceType::Neighbourhood: return 2;
+  case PlaceType::Locality:
+  case PlaceType::IsolatedDwelling: return 1;
+  default: break;
+  }
+
+  switch (adminLevel)
+  {
+  case AdminLevel::Two: return 6;
+  case AdminLevel::Four: return 5;
+  case AdminLevel::Six: return 4;
+  default: break;
+  }
+
+  return "";
+}
 }  // namespace regions
 }  // namespace generator
