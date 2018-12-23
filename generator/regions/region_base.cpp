@@ -157,7 +157,7 @@ size_t RegionWithData::GetWeight() const
   default: break;
   }
 
-  return "";
+  return 0;
 }
 }  // namespace regions
 }  // namespace generator

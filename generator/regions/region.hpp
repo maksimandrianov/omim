@@ -28,6 +28,7 @@ struct Region : public RegionWithName, public RegionWithData
   bool Contains(Region const & smaller) const;
   bool ContainsRect(Region const & smaller) const;
   bool Contains(City const & cityPoint) const;
+  bool Contains(BoostPoint const & point) const;
   double CalculateOverlapPercentage(Region const & other) const;
   BoostPoint GetCenter() const;
   bool IsCountry() const;

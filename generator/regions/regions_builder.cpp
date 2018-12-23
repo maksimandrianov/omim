@@ -138,29 +138,30 @@ Node::Ptr RegionsBuilder::BuildCountryRegionTree(Region const & country,
     for (; itCurr != std::rend(nodes); ++itCurr)
     {
       auto const & currRegion = (*itCurr)->GetData();
+      // LOG TID(1) INFO       6.0624 regions/regions.cpp:153 GenerateRegions() 7437 total ids. 7428 unique ids.
       // todo(maksimandrianov1): It requires more research.
       // If Contains returns false, then we calculate the percent overlap of polygons.
       // We believe that if one polygon overlaps by 98 percent, then we can assume that one
       // contains another.
       // auto const kAvaliableOverlapPercentage = 98;
       if (currRegion.Contains(firstRegion) ||
-          (firstRegion.GetWeight() < firstRegion.GetWeight() &&
+          (firstRegion.GetWeight() < currRegion.GetWeight() &&
            currRegion.Contains(firstRegion.GetCenter()) &&
            currRegion.CalculateOverlapPercentage(firstRegion) > 50.0)/* ||
                currRegion.CalculateOverlapPercentage(firstRegion) > kAvaliableOverlapPercentage*/ )
       {
         // In general, we assume that a region with the larger rank has the larger area.
         // But sometimes it does not. In this case, we will make an inversion.
-        if (firstRegion.GetRank() < currRegion.GetRank())
-        {
-          (*itCurr)->SetParent(*itFirstNode);
-          (*itFirstNode)->AddChild(*itCurr);
-        }
-        else
-        {
+//        if (firstRegion.GetRank() < currRegion.GetRank())
+//        {
+//          (*itCurr)->SetParent(*itFirstNode);
+//          (*itFirstNode)->AddChild(*itCurr);
+//        }
+//        else
+//        {
           (*itFirstNode)->SetParent(*itCurr);
           (*itCurr)->AddChild(*itFirstNode);
-        }
+//        }
         // We want to free up memory.
         firstRegion.DeletePolygon();
         nodes.pop_back();
