@@ -38,22 +38,34 @@ class HierarchyGeomPlace
 {
 public:
   explicit HierarchyGeomPlace(FeatureBuilder1 const & feature);
+  explicit HierarchyGeomPlace(std::vector<FeatureBuilder1> const & features);
 
   bool Contains(HierarchyGeomPlace const & smaller) const;
   bool Contains(m2::PointD const & point) const;
-  FeatureBuilder1 const & GetFeature() const { return m_feature; }
   void DeletePolygon() { m_polygon = nullptr; }
   double GetArea() const { return m_area; }
   base::GeoObjectId GetId() const { return m_id; }
+  std::string const & GetName() const { return m_name; }
+  m2::PointD GetCenter() const { return m_center; }
+  FeatureParams::Types const & GetTypes() const { return m_types; }
+  m2::RectD GetLimitRect() const
+  {
+    return m2::RectD(m_rect.min_corner().get<0>(), m_rect.min_corner().get<1>(),
+                     m_rect.max_corner().get<0>(), m_rect.max_corner().get<1>());
+  }
 
 private:
   using BoostPoint = boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>;
   using BoostPolygon = boost::geometry::model::polygon<BoostPoint>;
+  using BoostRect = boost::geometry::model::box<BoostPoint>;
 
   base::GeoObjectId m_id;
-  std::reference_wrapper<FeatureBuilder1 const> m_feature;
   std::unique_ptr<BoostPolygon> m_polygon;
+  std::string m_name;
+  FeatureParams::Types m_types;
+  BoostRect m_rect;
   double m_area;
+  m2::PointD m_center;
 };
 
 struct HierarchyLine
@@ -65,6 +77,7 @@ struct HierarchyLine
   std::string m_name;
   std::string m_dataFilename;
   uint8_t m_level;
+  bool m_hasChildren;
 };
 
 class HierarchyBuilder
@@ -82,7 +95,6 @@ protected:
   using Tree4d = m4::Tree<base::GeoObjectId>;
   using MapIdToNode = std::unordered_map<base::GeoObjectId, Node::Ptr>;
 
-  static std::string GetFeatureName(FeatureBuilder1 const & feature);
   static boost::optional<base::GeoObjectId>
   FindPointParent(m2::PointD const & point, MapIdToNode const & m, Tree4d const & tree);
   static boost::optional<Node::Ptr>
@@ -93,8 +105,10 @@ protected:
   static void LinkGeomPlaces(MapIdToNode const & m, Tree4d const & tree, Node::PtrList & nodes);
   static Node::PtrList MakeNodes(std::vector<FeatureBuilder1> const & features);
   static uint8_t GetLevel(Node::Ptr node);
+  static void DivideFeatures(std::vector<FeatureBuilder1> const & features, std::vector<FeatureBuilder1> & pointObjs,
+                             std::vector<FeatureBuilder1> & geomObjs);
 
-  virtual std::string GetType(FeatureBuilder1 const & feature) const;
+  virtual std::string GetType(FeatureParams::Types const & types) const;
 
   void FillLinesFromPointObjects(std::vector<FeatureBuilder1> const & pointObjs, MapIdToNode const & m,
                                  Tree4d const & tree, std::vector<HierarchyLine> & lines) const;
@@ -102,14 +116,19 @@ protected:
   void FillLinesFromGeomObjectPtrs(Node::PtrList const & nodes,
                                    std::vector<HierarchyLine> & lines) const;
   void SetDataFilename(std::string const & dataFilename);
-  void Prepare(std::string const & dataFilename, std::vector<FeatureBuilder1> & pointObjs,
-               std::vector<FeatureBuilder1> & geomObjs, Node::PtrList & geomObjsPtrs,
+  void ReadFeatures(std::string const & dataFilename, std::vector<FeatureBuilder1> & features) const;
+  void Prepare(std::vector<FeatureBuilder1> & features, Node::PtrList & geomObjsPtrs,
                Tree4d & tree, MapIdToNode & mapIdToNode) const;
 
   std::string m_dataFullFilename;
   std::string m_dataFilename;
   ftypes::BaseChecker const & m_checker;
 };
+
+std::string GetFeatureName(FeatureBuilder1 const & feature);
+
+void RemoveDuplicate(std::vector<FeatureBuilder1> & features,
+                     std::function<std::string(FeatureParams::Types const & types)> getType);
 }  // namespace hierarchy
 
 namespace popularity
@@ -151,7 +170,7 @@ public:
   explicit Builder(std::string const & dataFilename);
 
   // hierarchy::HierarchyBuilder overrides:
-  std::string GetType(FeatureBuilder1 const & feature) const override;
+  std::string GetType(FeatureParams::Types const & types) const override;
 
   std::vector<hierarchy::HierarchyLine> Build() const override;
 };

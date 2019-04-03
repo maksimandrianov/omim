@@ -95,7 +95,8 @@ std::string DebugPrint(GeoObjectId const & id)
 {
   std::ostringstream oss;
   // GetSerialId() does not work for invalid ids but we may still want to print them.
-  oss << DebugPrint(id.GetType()) << " " << (id.GetEncodedId() & kSerialMask);
+      auto const hash = std::hash<GeoObjectId>();
+  oss << DebugPrint(id.GetType()) << " " << (id.GetEncodedId() & kSerialMask) << " " << hash(id);
   return oss.str();
 }
 }  // namespace base
