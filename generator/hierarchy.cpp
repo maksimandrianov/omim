@@ -43,6 +43,7 @@ bool Less(FeatureBuilder1 const & l, FeatureBuilder1 const & r)
   return false;
 }
 }  // namespace
+
 HierarchyGeomPlace::HierarchyGeomPlace(FeatureBuilder1 const & feature)
   : m_id(feature.GetMostGenericOsmId())
   , m_polygon(std::make_unique<BoostPolygon>())
@@ -355,7 +356,7 @@ void RemoveDuplicate(std::vector<FeatureBuilder1> & features,
                      std::function<std::string(FeatureParams::Types const & types)> getType)
 {
   auto const kWordDifferencePercent = 10.0;
-  auto const kRectSize = 50;
+  auto const kRectSizeMeters = 50;
 
   m4::Tree<FeatureBuilder1> tree;
   for (auto const & feature : features)
@@ -364,16 +365,19 @@ void RemoveDuplicate(std::vector<FeatureBuilder1> & features,
   std::set<base::GeoObjectId> removingSet;
   for (auto const & feature : features)
   {
-    std::vector<FeatureBuilder1> sameObjects;
+    auto const id = feature.GetMostGenericOsmId();
+    if (removingSet.count(id) != 0)
+      continue;
+
     auto const name = GetFeatureName(feature);
     auto const type = getType(feature.GetTypes());
-    auto const id = feature.GetMostGenericOsmId();
     auto const dist =  static_cast<size_t>(std::ceil(static_cast<double>(name.size()) * kWordDifferencePercent / 100.0));
-    tree.ForEachInRect(MercatorBounds::RectByCenterXYAndSizeInMeters(feature.GetKeyPoint(), kRectSize), [&](auto const & ft) {
+    std::vector<FeatureBuilder1> sameObjects;
+    tree.ForEachInRect(MercatorBounds::RectByCenterXYAndSizeInMeters(feature.GetKeyPoint(), kRectSizeMeters), [&](auto const & ft) {
       auto const ftName = GetFeatureName(ft);
       auto const ftType = getType(ft.GetTypes());
       if (id.GetType() != base::GeoObjectId::Type::ObsoleteOsmNode ||
-          type != ftType || strings::EditDistance(std::begin(name), std::end(name), std::begin(ftName), std::end(ftName)) > dist)
+          type != ftType || strings::EditDistance(name, ftName) > dist)
         return;
 
       sameObjects.push_back(ft);

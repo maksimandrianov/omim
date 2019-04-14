@@ -585,4 +585,10 @@ size_t EditDistance(TIter const & b1, TIter const & e1, TIter const & b2, TIter 
   }
   return prev[m];
 }
+
+template <typename T>
+size_t EditDistance(T const & first, T const & second)
+{
+  return EditDistance(std::begin(first), std::end(first), std::begin(second), std::end(second));
+}
 }  // namespace strings
