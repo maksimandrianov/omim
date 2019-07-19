@@ -291,6 +291,22 @@ bool WriteToTempAndRenameToFile(string const & dest, function<bool(string const 
   return true;
 }
 
+void AppendFileToFile(std::string const & fromFilename, std::string const & toFilename)
+{
+  std::ifstream from;
+  from.exceptions(std::fstream::failbit | std::fstream::badbit);
+  from.open(fromFilename, std::ios::binary);
+
+  std::ofstream to;
+  to.exceptions(std::fstream::badbit);
+  to.open(toFilename, std::ios::binary | std::ios::app);
+
+  auto * buffer = from.rdbuf();
+  if (buffer->in_avail())
+    to << from.rdbuf();
+}
+
+
 bool CopyFileX(string const & fOld, string const & fNew)
 {
   try
@@ -300,6 +316,10 @@ bool CopyFileX(string const & fOld, string const & fNew)
 
     if (ifs.is_open() && ofs.is_open())
     {
+      auto * buffer = ifs.rdbuf();
+      if (!buffer->in_avail())
+        return true;
+
       ofs << ifs.rdbuf();
       ofs.flush();
 

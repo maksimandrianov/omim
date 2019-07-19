@@ -45,6 +45,7 @@ public:
   };
 
   FeatureBuilder();
+  FeatureBuilder(FeatureBuilder const & ) = default;
   // Checks for equality. The error of coordinates is allowed.
   bool operator==(FeatureBuilder const & fb) const;
   // Checks for equality. The error of coordinates isn't allowed. Binary equality check of
@@ -240,6 +241,9 @@ protected:
   /// Not used in GEOM_POINTs
   int64_t m_coastCell;
 };
+
+static_assert(std::is_move_constructible<FeatureBuilder>::value, "");
+static_assert(std::is_move_assignable<FeatureBuilder>::value, "");
 
 void Check(FeatureBuilder const fb);
 std::string DebugPrint(FeatureBuilder const & fb);
