@@ -117,7 +117,7 @@ namespace feature
       }
     };
 
-    void operator()(FeatureBuilder1 & fb)
+    void operator()(FeatureBuilder & fb)
     {
       buffer_vector<borders::CountryPolygons const *, 32> vec;
       m_countries.ForEachInRect(fb.GetLimitRect(), InsertCountriesPtr(vec));
@@ -156,7 +156,7 @@ namespace feature
 #endif
     }
 
-    void EmitFeature(borders::CountryPolygons const * country, FeatureBuilder1 const & fb)
+    void EmitFeature(borders::CountryPolygons const * country, FeatureBuilder const & fb)
     {
 #if PARALLEL_POLYGONIZER
       QMutexLocker mutexLocker(&m_EmitFeatureMutex);
@@ -164,23 +164,29 @@ namespace feature
 #endif
       if (country->m_index == -1)
       {
-        m_Names.push_back(country->m_name);
-        m_Buckets.push_back(new FeatureOutT(m_info.GetTmpFileName(country->m_name)));
+        m_Names.push_back(country->GetName());
+        m_Buckets.push_back(new FeatureOutT(m_info.GetTmpFileName(country->GetName())));
         country->m_index = static_cast<int>(m_Buckets.size())-1;
       }
 
       if (!m_currentNames.empty())
         m_currentNames += ';';
-      m_currentNames += country->m_name;
+      m_currentNames += country->GetName();
 
       auto & bucket = *(m_Buckets[country->m_index]);
-      bucket(fb);
+      bucket.Collect(fb);
     }
 
-    vector<std::string> const & Names() const
+    std::vector<std::string> const & GetNames() const
     {
       return m_Names;
     }
+
+    std::string const & GetCurrentNames() const
+    {
+      return m_currentNames;
+    }
+
 
   private:
     friend class PolygonizerTask;
@@ -193,7 +199,7 @@ namespace feature
     public:
       PolygonizerTask(Polygonizer * pPolygonizer,
                       buffer_vector<borders::CountryPolygons const *, 32> const & countries,
-                      FeatureBuilder1 const & fb)
+                      FeatureBuilder const & fb)
         : m_pPolygonizer(pPolygonizer), m_Countries(countries), m_fb(fb)
       {
       }
@@ -202,7 +208,7 @@ namespace feature
       {
         for (size_t i = 0; i < m_Countries.size(); ++i)
         {
-          PointChecker doCheck(m_Countries[i]->m_regions);
+          PointChecker doCheck(m_Countries[i]->GetRegionsContainer());
           m_fb.ForEachGeometryPoint(doCheck);
 
           if (doCheck.m_belongs)
@@ -222,7 +228,7 @@ namespace feature
     private:
       Polygonizer * m_pPolygonizer;
       buffer_vector<borders::CountryPolygons const *, 32> m_Countries;
-      FeatureBuilder1 m_fb;
+      FeatureBuilder m_fb;
     };
   };
 }  // namespace feature

@@ -71,6 +71,11 @@ public:
     });
   }
 
+  RegionsContainer const & GetRegionsContainer() const
+  {
+    return m_regions;
+  }
+
   // TODO(maksimandrianov): Remove it, after removing Polygonizer class.
   mutable int32_t m_index = -1;
 
