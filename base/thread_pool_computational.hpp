@@ -115,6 +115,17 @@ public:
     m_condition.notify_all();
   }
 
+  void WaitAndStop()
+  {
+    {
+      std::unique_lock<std::mutex> lock(m_mutex);
+      m_done = true;
+    }
+    m_joiner.TryJoin();
+    m_condition.notify_all();
+
+  }
+
 private:
   void Worker()
   {

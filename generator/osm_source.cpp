@@ -1,17 +1,16 @@
 #include "generator/osm_source.hpp"
 
+#include "generator/intermediate_data.hpp"
 #include "generator/intermediate_elements.hpp"
 #include "generator/osm_element.hpp"
-#include "generator/osm_o5m_source.hpp"
-#include "generator/osm_xml_source.hpp"
+#include "generator/processor_factory.hpp"
 #include "generator/towns_dumper.hpp"
+#include "generator/translator_factory.hpp"
 
 #include "platform/platform.hpp"
 
 #include "geometry/mercator.hpp"
 #include "geometry/tree4d.hpp"
-
-#include "coding/parse_xml.hpp"
 
 #include "base/assert.hpp"
 #include "base/stl_helpers.hpp"
@@ -24,6 +23,7 @@
 #include "defines.hpp"
 
 using namespace std;
+using namespace base::thread_pool::computational;
 
 namespace generator
 {
@@ -121,8 +121,13 @@ void BuildIntermediateDataFromXML(SourceReader & stream, cache::IntermediateData
 
 void ProcessOsmElementsFromXML(SourceReader & stream, function<void(OsmElement *)> processor)
 {
-  XMLSource parser([&](OsmElement * element) { processor(element); });
-  ParseXMLSequence(stream, parser);
+  ProcessorXmlElementsFromXml processorXmlElementsFromXml(stream);
+  OsmElement element;
+  while (processorXmlElementsFromXml.TryRead(element))
+  {
+    processor(&element);
+    element = {};
+  }
 }
 
 void BuildIntermediateDataFromO5M(SourceReader & stream, cache::IntermediateDataWriter & cache,
@@ -140,14 +145,30 @@ void BuildIntermediateDataFromO5M(SourceReader & stream, cache::IntermediateData
 
 void ProcessOsmElementsFromO5M(SourceReader & stream, function<void(OsmElement *)> processor)
 {
+  ProcessorOsmElementsFromO5M processorOsmElementsFromO5M(stream);
+  OsmElement element;
+  while (processorOsmElementsFromO5M.TryRead(element))
+  {
+    processor(&element);
+    element = {};
+  }
+}
+
+ProcessorOsmElementsFromO5M::ProcessorOsmElementsFromO5M(SourceReader & stream)
+  : m_stream(stream)
+  , m_dataset([&, this](uint8_t * buffer, size_t size) { return m_stream.Read(reinterpret_cast<char *>(buffer), size); })
+  , m_pos(m_dataset.begin())
+{
+}
+
+bool ProcessorOsmElementsFromO5M::TryRead(OsmElement & element)
+{
+  if (m_pos == m_dataset.end())
+    return false;
+
   using Type = osm::O5MSource::EntityType;
 
-  osm::O5MSource dataset([&stream](uint8_t * buffer, size_t size)
-  {
-    return stream.Read(reinterpret_cast<char *>(buffer), size);
-  });
-
-  auto translate = [](Type t) -> OsmElement::EntityType {
+  auto const translate = [](Type t) -> OsmElement::EntityType {
     switch (t)
     {
     case Type::Node: return OsmElement::EntityType::Node;
@@ -157,132 +178,391 @@ void ProcessOsmElementsFromO5M(SourceReader & stream, function<void(OsmElement *
     }
   };
 
-  // Be careful, we could call Nodes(), Members(), Tags() from O5MSource::Entity
-  // only once (!). Because these functions read data from file simultaneously with
-  // iterating in loop. Furthermore, into Tags() method calls Nodes.Skip() and Members.Skip(),
-  // thus first call of Nodes (Members) after Tags() will not return any results.
-  // So don not reorder the "for" loops (!).
+  auto entity = *m_pos;
 
-  for (auto const & entity : dataset)
+  element.m_id = entity.id;
+  switch (entity.type)
   {
-    OsmElement p;
-    p.m_id = entity.id;
-
-    switch (entity.type)
-    {
-    case Type::Node:
-    {
-      p.m_type = OsmElement::EntityType::Node;
-      p.m_lat = entity.lat;
-      p.m_lon = entity.lon;
-      break;
-    }
-    case Type::Way:
-    {
-      p.m_type = OsmElement::EntityType::Way;
-      for (uint64_t nd : entity.Nodes())
-        p.AddNd(nd);
-      break;
-    }
-    case Type::Relation:
-    {
-      p.m_type = OsmElement::EntityType::Relation;
-      for (auto const & member : entity.Members())
-        p.AddMember(member.ref, translate(member.type), member.role);
-      break;
-    }
-    default: break;
-    }
-
-    for (auto const & tag : entity.Tags())
-      p.AddTag(tag.key, tag.value);
-
-    processor(&p);
+  case Type::Node:
+  {
+    element.m_type = OsmElement::EntityType::Node;
+    element.m_lat = entity.lat;
+    element.m_lon = entity.lon;
+    break;
   }
+  case Type::Way:
+  {
+    element.m_type = OsmElement::EntityType::Way;
+    for (uint64_t nd : entity.Nodes())
+      element.AddNd(nd);
+    break;
+  }
+  case Type::Relation:
+  {
+    element.m_type = OsmElement::EntityType::Relation;
+    for (auto const & member : entity.Members())
+      element.AddMember(member.ref, translate(member.type), member.role);
+    break;
+  }
+  default: break;
+  }
+
+  for (auto const & tag : entity.Tags())
+    element.AddTag(tag.key, tag.value);
+
+  ++m_pos;
+  return true;
+}
+
+ProcessorXmlElementsFromXml::ProcessorXmlElementsFromXml(SourceReader & stream)
+  : m_stream(stream)
+  , m_xmlSource([&, this](auto * element) { m_queue.emplace(*element); })
+  , m_parser(m_stream, m_xmlSource)
+{
+}
+
+bool ProcessorXmlElementsFromXml::TryReadFromQueue(OsmElement & element)
+{
+  if (m_queue.empty())
+    return false;
+
+  element = m_queue.front();
+  m_queue.pop();
+  return true;
+}
+
+bool ProcessorXmlElementsFromXml::TryRead(OsmElement & element)
+{
+  if (TryReadFromQueue(element))
+    return true;
+
+  while (m_parser.Read())
+  {
+    if (TryReadFromQueue(element))
+      return true;
+  }
+
+  return TryReadFromQueue(element);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Generate functions implementations.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-bool GenerateRaw(feature::GenerateInfo & info, TranslatorInterface & translators)
+bool GenerateIntermediateData(feature::GenerateInfo & info)
 {
-  auto const fn = [&](OsmElement * element) {
-    CHECK(element, ());
-    translators.Emit(*element);
-  };
-
+  auto nodes = cache::CreatePointStorageWriter(info.m_nodeStorageType,
+                                               info.GetIntermediateFileName(NODES_FILE));
+  cache::IntermediateDataWriter cache(*nodes, info);
+  TownsDumper towns;
   SourceReader reader = info.m_osmFileName.empty() ? SourceReader() : SourceReader(info.m_osmFileName);
+
+  LOG(LINFO, ("Data source:", info.m_osmFileName));
+
   switch (info.m_osmFileType)
   {
   case feature::GenerateInfo::OsmSourceType::XML:
-    ProcessOsmElementsFromXML(reader, fn);
+    BuildIntermediateDataFromXML(reader, cache, towns);
     break;
   case feature::GenerateInfo::OsmSourceType::O5M:
-    ProcessOsmElementsFromO5M(reader, fn);
+    BuildIntermediateDataFromO5M(reader, cache, towns);
     break;
   }
 
-  LOG(LINFO, ("Processing", info.m_osmFileName, "done."));
+  cache.SaveIndex();
+  towns.Dump(info.GetIntermediateFileName(TOWNS_FILE));
+  LOG(LINFO, ("Added points count =", nodes->GetNumProcessedPoints()));
+  return true;
+}
+
+TranslatorsPool::TranslatorsPool(shared_ptr<TranslatorCollection> const & original,
+                                 shared_ptr<generator::cache::IntermediateData> const & cache,
+                                 size_t copyCount)
+  : m_translators({original})
+  , m_threadPool(copyCount + 1)
+{
+  m_freeTranslators.Push(0);
+  m_translators.reserve(copyCount + 1);
+  for (size_t i = 0; i < copyCount; ++i)
+  {
+    auto cache_ = cache->Clone();
+    auto translator = original->Clone(cache_);
+    m_translators.emplace_back(translator);
+    m_freeTranslators.Push(i + 1);
+  }
+}
+
+void TranslatorsPool::Emit(vector<OsmElement> && elements)
+{
+  base::threads::DataWrapper<size_t> d;
+  m_freeTranslators.WaitAndPop(d);
+  auto const idx = d.Get();
+  m_threadPool.SubmitWork([&, idx, elements{move(elements)}]() mutable {
+    for (auto & element : elements)
+      m_translators[idx]->Emit(element);
+
+    m_freeTranslators.Push(idx);
+  });
+}
+
+bool TranslatorsPool::Finish()
+{
+  m_threadPool.WaitAndStop();
+  auto const & translator = m_translators.front();
+  for (size_t i = 1; i < m_translators.size(); ++i)
+  {
+    m_translators[i]->Flush();
+    translator->Merge(*m_translators[i]);
+  }
+
+  translator->Flush();
+  return translator->Finish();
+}
+
+RawGeneratorWriter::RawGeneratorWriter(shared_ptr<FeatureProcessorQueue> const & queue,
+                                       string const & path)
+  : m_queue(queue), m_path(path) {}
+
+
+RawGeneratorWriter::~RawGeneratorWriter()
+{
+  ShutdownAndJoin();
+}
+
+void RawGeneratorWriter::Run()
+{
+  m_thread = thread([&]() {
+    while (true)
+    {
+      FeatureProcessorChank chank;
+      m_queue->WaitAndPop(chank);
+      if (chank.IsEmpty())
+        return;
+
+      Write(chank.Get());
+    }
+  });
+}
+
+vector<string> RawGeneratorWriter::GetNames()
+{
+  ShutdownAndJoin();
+  vector<string> names;
+  names.reserve(m_collectors.size());
+  for (const auto  & p : m_collectors)
+    names.emplace_back(p.first);
+
+  return names;
+}
+
+void RawGeneratorWriter::Write(vector<ProcessedData> const & vecChanks)
+{
+  for (auto const & chank : vecChanks)
+  {
+    for (auto const & affiliation : chank.m_affiliations)
+    {
+      if (affiliation.empty())
+        continue;
+
+      if (m_collectors.count(affiliation) == 0)
+      {
+        auto path = base::JoinPath(m_path, affiliation + DATA_FILE_EXTENSION_TMP);
+        m_collectors.emplace(affiliation, make_unique<FileWriter>(move(path)));
+      }
+
+      WriteVarUint(*m_collectors[affiliation], static_cast<uint32_t>(chank.m_buffer.size()));
+      m_collectors[affiliation]->Write(chank.m_buffer.data(), chank.m_buffer.size());
+    }
+  }
+}
+
+void RawGeneratorWriter::ShutdownAndJoin()
+{
+  m_queue->Push({});
+  if (m_thread.joinable())
+    m_thread.join();
+}
+
+RawGenerator::RawGenerator(feature::GenerateInfo & genInfo, size_t threadsCount, size_t chankSize)
+  : m_genInfo(genInfo)
+  , m_threadsCount(threadsCount)
+  , m_chankSize(chankSize)
+  , m_cache(make_shared<generator::cache::IntermediateData>(genInfo))
+  , m_queue(make_shared<FeatureProcessorQueue>())
+  , m_translators(make_shared<TranslatorCollection>())
+{
+}
+
+void RawGenerator::ForceReloadCache()
+{
+  m_cache = make_shared<generator::cache::IntermediateData>(m_genInfo, true /* forceReload */);
+}
+
+shared_ptr<FeatureProcessorQueue> RawGenerator::GetQueue()
+{
+  return m_queue;
+}
+
+void RawGenerator::GenerateCountries(bool disableAds)
+{
+  auto processor = CreateProcessor(ProcessorType::Country, m_queue, m_genInfo.m_targetDir, "",
+                                   m_genInfo.m_isMwmsForWholeWorld);
+  auto const translatorType = disableAds ? TranslatorType::Country : TranslatorType::CountryWithAds;
+  m_translators->Append(CreateTranslator(translatorType, processor, m_cache, m_genInfo));
+  m_finalProcessors.emplace(CreateCountryFinalProcessor());
+}
+
+void RawGenerator::GenerateWorld(bool disableAds)
+{
+  auto processor = CreateProcessor(ProcessorType::World, m_queue, m_genInfo.m_popularPlacesFilename);
+  auto const translatorType = disableAds ? TranslatorType::World : TranslatorType::WorldWithAds;
+  m_translators->Append(CreateTranslator(translatorType, processor, m_cache, m_genInfo));
+  m_finalProcessors.emplace(CreateWorldFinalProcessor());
+}
+
+void RawGenerator::GenerateCoasts()
+{
+  auto processor = CreateProcessor(ProcessorType::Coastline, m_queue);
+  m_translators->Append(CreateTranslator(TranslatorType::Coastline, processor, m_cache));
+  m_finalProcessors.emplace(CreateCoslineFinalProcessor());
+}
+
+void RawGenerator::GenerateRegionFeatures(string const & filename)
+{
+  auto processor = CreateProcessor(ProcessorType::Simple, m_queue, filename);
+  m_translators->Append(CreateTranslator(TranslatorType::Regions, processor, m_cache, m_genInfo));
+}
+
+void RawGenerator::GenerateStreetsFeatures(string const & filename)
+{
+  auto processor = CreateProcessor(ProcessorType::Simple, m_queue, filename);
+  m_translators->Append(CreateTranslator(TranslatorType::Streets, processor, m_cache));
+}
+
+void RawGenerator::GenerateGeoObjectsFeatures(string const & filename)
+{
+  auto processor = CreateProcessor(ProcessorType::Simple, m_queue, filename);
+  m_translators->Append(CreateTranslator(TranslatorType::GeoObjects, processor, m_cache));
+}
+
+void RawGenerator::GenerateCustom(shared_ptr<TranslatorInterface> const & translator)
+{
+  m_translators->Append(translator);
+}
+
+void RawGenerator::GenerateCustom(shared_ptr<TranslatorInterface> const & translator,
+                                  shared_ptr<FinalProcessorIntermediateMwmInterface> const & finalProcessor)
+{
+  m_translators->Append(translator);
+  m_finalProcessors.emplace(finalProcessor);
+}
+
+bool RawGenerator::Execute()
+{  
+  if (!GenerateFilteredFeatures())
+    return false;
+
+//  while (!m_finalProcessors.empty())
+//  {
+//    ThreadPool threadPool(m_threadsCount);
+//    do
+//    {
+//      auto const finalProcessor = m_finalProcessors.top();
+//      threadPool.SubmitWork([finalProcessor]() {
+//        finalProcessor->Process();
+//      });
+//      m_finalProcessors.pop();
+//      if (m_finalProcessors.empty() || *finalProcessor != *m_finalProcessors.top())
+//        break;
+//    }
+//    while (true);
+//  }
+
+//  LOG(LINFO, ("Final processing is finished."));
+  return true;
+}
+
+vector<string> RawGenerator::GetNames() const
+{
+  return m_names;
+}
+
+RawGenerator::FinalProcessorPtr RawGenerator::CreateCoslineFinalProcessor()
+{
+  auto finalProcessor = make_shared<CoastlineFinalProcessor>(
+                          m_genInfo.GetTmpFileName(WORLD_COASTS_FILE_NAME, DATA_FILE_EXTENSION_TMP));
+  finalProcessor->SetCoastlinesFilenames(
+        m_genInfo.GetIntermediateFileName(WORLD_COASTS_FILE_NAME, ".geom"),
+        m_genInfo.GetIntermediateFileName(WORLD_COASTS_FILE_NAME, RAW_GEOM_FILE_EXTENSION));
+  return finalProcessor;
+}
+
+RawGenerator::FinalProcessorPtr RawGenerator::CreateCountryFinalProcessor()
+{
+  auto finalProcessor = make_shared<CountryFinalProcessor>(m_genInfo.m_targetDir, m_genInfo.m_tmpDir,
+                                                           m_genInfo.m_isMwmsForWholeWorld, m_threadsCount);
+  finalProcessor->SetBooking(m_genInfo.m_bookingDataFilename);
+  finalProcessor->SetCitiesAreas(m_genInfo.GetIntermediateFileName(CITIES_AREAS_TMP_FILENAME));
+  finalProcessor->SetPromoCatalog(m_genInfo.m_promoCatalogCitiesFilename);
+  if (m_genInfo.m_emitCoasts)
+  {
+    finalProcessor->SetCoastlines(m_genInfo.GetIntermediateFileName(WORLD_COASTS_FILE_NAME, ".geom"),
+                                  m_genInfo.GetTmpFileName(WORLD_COASTS_FILE_NAME));
+  }
+
+  finalProcessor->DumpCitiesBoundaries(m_genInfo.m_citiesBoundariesFilename);
+  return finalProcessor;
+}
+
+RawGenerator::FinalProcessorPtr RawGenerator::CreateWorldFinalProcessor()
+{
+  auto finalProcessor = make_shared<WorldFinalProcessor>(
+                          m_genInfo.m_tmpDir,
+                          m_genInfo.GetIntermediateFileName(WORLD_COASTS_FILE_NAME, RAW_GEOM_FILE_EXTENSION));
+  finalProcessor->SetPopularPlaces(m_genInfo.m_popularPlacesFilename);
+  finalProcessor->SetCitiesAreas(m_genInfo.GetIntermediateFileName(CITIES_AREAS_TMP_FILENAME));
+  finalProcessor->SetPromoCatalog(m_genInfo.m_promoCatalogCitiesFilename);
+  return finalProcessor;
+}
+
+bool RawGenerator::GenerateFilteredFeatures()
+{
+  SourceReader reader = m_genInfo.m_osmFileName.empty() ? SourceReader()
+                                                        : SourceReader(m_genInfo.m_osmFileName);
+
+  unique_ptr<ProcessorOsmElementsInterface> sourseProcessor;
+  switch (m_genInfo.m_osmFileType) {
+  case feature::GenerateInfo::OsmSourceType::O5M:
+    sourseProcessor = make_unique<ProcessorOsmElementsFromO5M>(reader);
+    break;
+  case feature::GenerateInfo::OsmSourceType::XML:
+    sourseProcessor = make_unique<ProcessorXmlElementsFromXml>(reader);
+    break;
+  }
+
+  TranslatorsPool translators(m_translators, m_cache, m_threadsCount - 1 /* copyCount */);
+  RawGeneratorWriter rawGeneratorWriter(m_queue, m_genInfo.m_tmpDir);
+  rawGeneratorWriter.Run();
+
+  size_t element_pos = 0;
+  vector<OsmElement> elements(m_chankSize);
+  while(sourseProcessor->TryRead(elements[element_pos]))
+  {
+    if (++element_pos != m_chankSize)
+      continue;
+
+    translators.Emit(move(elements));
+    elements = vector<OsmElement>(m_chankSize);
+    element_pos = 0;
+  }
+  elements.resize(element_pos);
+  translators.Emit(move(elements));
+
+  LOG(LINFO, ("Input was processed."));
   if (!translators.Finish())
     return false;
 
-  translators.GetNames(info.m_bucketNames);
+  m_names = rawGeneratorWriter.GetNames();
+  LOG(LINFO, ("Names:", m_names));
   return true;
 }
-
-LoaderWrapper::LoaderWrapper(feature::GenerateInfo & info)
-  : m_reader(cache::CreatePointStorageReader(info.m_nodeStorageType, info.GetIntermediateFileName(NODES_FILE)), info)
-{
-  m_reader.LoadIndex();
-}
-
-cache::IntermediateDataReader & LoaderWrapper::GetReader()
-{
-  return m_reader;
-}
-
-CacheLoader::CacheLoader(feature::GenerateInfo & info) : m_info(info) {}
-
-cache::IntermediateDataReader & CacheLoader::GetCache()
-{
-  if (!m_loader)
-    m_loader = std::make_unique<LoaderWrapper>(m_info);
-
-  return m_loader->GetReader();
-}
-
-bool GenerateIntermediateData(feature::GenerateInfo & info)
-{
-  try
-  {
-    auto nodes = cache::CreatePointStorageWriter(info.m_nodeStorageType,
-                                                 info.GetIntermediateFileName(NODES_FILE));
-    cache::IntermediateDataWriter cache(nodes, info);
-    TownsDumper towns;
-    SourceReader reader = info.m_osmFileName.empty() ? SourceReader() : SourceReader(info.m_osmFileName);
-
-    LOG(LINFO, ("Data source:", info.m_osmFileName));
-
-    switch (info.m_osmFileType)
-    {
-    case feature::GenerateInfo::OsmSourceType::XML:
-      BuildIntermediateDataFromXML(reader, cache, towns);
-      break;
-    case feature::GenerateInfo::OsmSourceType::O5M:
-      BuildIntermediateDataFromO5M(reader, cache, towns);
-      break;
-    }
-
-    cache.SaveIndex();
-    towns.Dump(info.GetIntermediateFileName(TOWNS_FILE));
-    LOG(LINFO, ("Added points count =", nodes->GetNumProcessedPoints()));
-  }
-  catch (Writer::Exception const & e)
-  {
-    LOG(LCRITICAL, ("Error with file:", e.what()));
-  }
-  return true;
-}
-
 }  // namespace generator

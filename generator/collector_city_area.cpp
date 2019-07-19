@@ -1,4 +1,4 @@
-#include "generator/collector_city_boundary.hpp"
+#include "generator/collector_city_area.hpp"
 
 #include "generator/feature_generator.hpp"
 #include "generator/intermediate_data.hpp"

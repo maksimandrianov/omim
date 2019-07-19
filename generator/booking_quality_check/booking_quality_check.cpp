@@ -1,5 +1,5 @@
 #include "generator/booking_dataset.hpp"
-#include "generator/emitter_booking.hpp"
+#include "generator/processor_booking.hpp"
 #include "generator/feature_builder.hpp"
 #include "generator/opentable_dataset.hpp"
 #include "generator/osm_source.hpp"
@@ -328,11 +328,12 @@ void RunImpl(GenerateInfo & info)
   map<base::GeoObjectId, FeatureBuilder> features;
   LOG_SHORT(LINFO, ("OSM data:", FLAGS_osm));
 
-  CacheLoader cacheLoader(info);
+  generator::cache::IntermediateData cacheLoader(info);
   TranslatorCollection translators;
-  auto emitter = make_shared<EmitterBooking<Dataset>>(dataset, features);
+  auto processor = make_shared<ProcessorBooking<Dataset>>(dataset, features);
   translators.Append(CreateTranslator(TranslatorType::Country, emitter, cacheLoader.GetCache(), info));
-  GenerateRaw(info, translators);
+  RawGenerator generator(info);
+  generator.GenerateCustom()
 
   if (FLAGS_generate)
   {
