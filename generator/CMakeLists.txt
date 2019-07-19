@@ -15,6 +15,8 @@ set(
   boost_helpers.hpp
   borders.cpp
   borders.hpp
+  borders_loader.cpp
+  borders_loader.hpp
   brands_loader.cpp
   brands_loader.hpp
   camera_info_collector.cpp
