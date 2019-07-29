@@ -1,5 +1,7 @@
 #pragma once
 
+#include "generator/feature_builder.hpp"
+
 #include "storage/storage_defines.hpp"
 
 #include "coding/geometry_coding.hpp"
@@ -15,8 +17,21 @@
 #include <unordered_map>
 #include <vector>
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/register/point.hpp>
+#include <boost/geometry/geometries/register/ring.hpp>
+#include <boost/geometry/geometries/register/linestring.hpp>
+#include <boost/geometry/geometries/register/multi_polygon.hpp>
+
 #define BORDERS_DIR "borders/"
 #define BORDERS_EXTENSION ".poly"
+
+struct Ring : std::vector<m2::PointD> {};
+struct LineString : std::vector<m2::PointD> {};
+
+BOOST_GEOMETRY_REGISTER_POINT_2D(m2::PointD, double, cs::cartesian, x, y);
+BOOST_GEOMETRY_REGISTER_RING(Ring);
+BOOST_GEOMETRY_REGISTER_LINESTRING(LineString);
 
 namespace borders
 {
@@ -69,6 +84,26 @@ public:
     return m_regions.ForAnyInRect(m2::RectD(point, point), [&](auto const & rgn) {
       return rgn.Contains(point);
     });
+  }
+
+  bool Contains(feature::FeatureBuilder const & fb) const
+  {
+    using namespace boost::geometry;
+
+    bool contains = false;
+    m_regions.ForEach([&](Region const & rgn) {
+      if (contains || !rgn.GetRect().IsIntersect(fb.GetLimitRect()))
+        return;
+
+      auto const & ring = static_cast<Ring const &>(rgn.Data());
+      if ((fb.IsPoint() && intersects(ring, fb.GetKeyPoint())) ||
+          (fb.IsLine() && intersects(ring, static_cast<LineString const &>(fb.GetOuterGeometry()))) ||
+          (fb.IsArea() && intersects(ring, static_cast<Ring const &>(fb.GetOuterGeometry()))))
+      {
+        contains = true;
+      }
+    });
+    return contains;
   }
 
   // TODO(maksimandrianov): Remove it, after removing Polygonizer class.

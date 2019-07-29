@@ -27,11 +27,14 @@ std::vector<std::string> CountriesFilesAffiliation::GetAffiliations(FeatureBuild
 
   for (borders::CountryPolygons const & countryPolygons : countriesContainer)
   {
-    auto const need = fb.ForAnyGeometryPoint([&](auto const & point) {
-      return countryPolygons.Contains(point);
-    });
+    //    auto const need = fb.ForAnyGeometryPoint([&](auto const & point) {
+    //      return countryPolygons.Contains(point);
+    //    });
 
-    if (need)
+    //    if (need)
+    //      countries.emplace_back(countryPolygons.GetName());
+
+    if (countryPolygons.Contains(fb))
       countries.emplace_back(countryPolygons.GetName());
   }
 

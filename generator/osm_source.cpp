@@ -405,7 +405,7 @@ shared_ptr<FeatureProcessorQueue> RawGenerator::GetQueue()
 void RawGenerator::GenerateCountries(bool disableAds)
 {
   auto processor = CreateProcessor(ProcessorType::Country, m_queue, m_genInfo.m_targetDir, "",
-                                   m_genInfo.m_isMwmsForWholeWorld);
+                                   m_genInfo.m_haveBordersForWholeWorld);
   auto const translatorType = disableAds ? TranslatorType::Country : TranslatorType::CountryWithAds;
   m_translators->Append(CreateTranslator(translatorType, processor, m_cache, m_genInfo));
   m_finalProcessors.emplace(CreateCountryFinalProcessor());
@@ -461,23 +461,23 @@ bool RawGenerator::Execute()
   if (!GenerateFilteredFeatures())
     return false;
 
-//  while (!m_finalProcessors.empty())
-//  {
-//    ThreadPool threadPool(m_threadsCount);
-//    do
-//    {
-//      auto const finalProcessor = m_finalProcessors.top();
-//      threadPool.SubmitWork([finalProcessor]() {
-//        finalProcessor->Process();
-//      });
-//      m_finalProcessors.pop();
-//      if (m_finalProcessors.empty() || *finalProcessor != *m_finalProcessors.top())
-//        break;
-//    }
-//    while (true);
-//  }
+  while (!m_finalProcessors.empty())
+  {
+    ThreadPool threadPool(m_threadsCount);
+    do
+    {
+      auto const finalProcessor = m_finalProcessors.top();
+      threadPool.SubmitWork([finalProcessor]() {
+        finalProcessor->Process();
+      });
+      m_finalProcessors.pop();
+      if (m_finalProcessors.empty() || *finalProcessor != *m_finalProcessors.top())
+        break;
+    }
+    while (true);
+  }
 
-//  LOG(LINFO, ("Final processing is finished."));
+  LOG(LINFO, ("Final processing is finished."));
   return true;
 }
 
@@ -499,7 +499,7 @@ RawGenerator::FinalProcessorPtr RawGenerator::CreateCoslineFinalProcessor()
 RawGenerator::FinalProcessorPtr RawGenerator::CreateCountryFinalProcessor()
 {
   auto finalProcessor = make_shared<CountryFinalProcessor>(m_genInfo.m_targetDir, m_genInfo.m_tmpDir,
-                                                           m_genInfo.m_isMwmsForWholeWorld, m_threadsCount);
+                                                           m_genInfo.m_haveBordersForWholeWorld, m_threadsCount);
   finalProcessor->SetBooking(m_genInfo.m_bookingDataFilename);
   finalProcessor->SetCitiesAreas(m_genInfo.GetIntermediateFileName(CITIES_AREAS_TMP_FILENAME));
   finalProcessor->SetPromoCatalog(m_genInfo.m_promoCatalogCitiesFilename);

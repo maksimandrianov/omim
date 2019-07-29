@@ -185,7 +185,7 @@ class RawGenerator
 {
 public:
   explicit RawGenerator(feature::GenerateInfo & genInfo, size_t threadsCount = 1,
-                        size_t chankSize = 2048);
+                        size_t chankSize = 128);
 
   void GenerateCountries(bool disableAds = true);
   void GenerateWorld(bool disableAds = true);

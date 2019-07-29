@@ -115,11 +115,11 @@ DEFINE_bool(preprocess, false, "1st pass - create nodes/ways/relations data.");
 DEFINE_bool(generate_features, false, "2nd pass - generate intermediate features.");
 DEFINE_bool(no_ads, false, "generation without ads.");
 DEFINE_string(generate_region_features, "",
-            "Generate intermediate features for regions to use in regions index and borders generation.");
+              "Generate intermediate features for regions to use in regions index and borders generation.");
 DEFINE_string(generate_streets_features, "",
-            "Generate intermediate features for streets to use in server-side forward geocoder.");
+              "Generate intermediate features for streets to use in server-side forward geocoder.");
 DEFINE_string(generate_geo_objects_features, "",
-            "Generate intermediate features for geo objects to use in geo objects index.");
+              "Generate intermediate features for geo objects to use in geo objects index.");
 DEFINE_bool(generate_geometry, false,
             "3rd pass - split and simplify geometry and triangles for features.");
 DEFINE_bool(generate_index, false, "4rd pass - generate index.");
@@ -138,8 +138,8 @@ DEFINE_string(cities_boundaries_data, "", "File with cities boundaries");
 DEFINE_bool(generate_cities_ids, false, "Generate the cities ids section");
 
 DEFINE_bool(generate_world, false, "Generate separate world file.");
-DEFINE_bool(mwms_for_whole_world, false, "If it is set to true, the optimization of checking that the "
-                                         "fb belongs to the mwm boundary will be applied.");
+DEFINE_bool(have_borders_for_whole_world, false, "If it is set to true, the optimization of checking that the "
+                                                 "fb belongs to the country border will be applied.");
 
 DEFINE_string(nodes_list_path, "",
               "Path to file containing list of node ids we need to add to locality index. May be empty.");
@@ -280,7 +280,7 @@ int GeneratorToolMain(int argc, char ** argv)
   genInfo.m_brandsTranslationsFilename = FLAGS_brands_translations_data;
   genInfo.m_citiesBoundariesFilename = FLAGS_cities_boundaries_data;
   genInfo.m_versionDate = static_cast<uint32_t>(FLAGS_planet_version);
-  genInfo.m_isMwmsForWholeWorld = FLAGS_mwms_for_whole_world;
+  genInfo.m_haveBordersForWholeWorld = FLAGS_have_borders_for_whole_world;
   genInfo.m_createWorld = FLAGS_generate_world;
   genInfo.m_makeCoasts = FLAGS_make_coasts;
   genInfo.m_emitCoasts = FLAGS_emit_coasts;
@@ -335,7 +335,7 @@ int GeneratorToolMain(int argc, char ** argv)
   if (FLAGS_dump_mwm_tmp)
   {
     for (auto const & fb : feature::ReadAllDatRawFormat(genInfo.GetTmpFileName(FLAGS_output)))
-         std::cout << DebugPrint(fb) << std::endl;
+      std::cout << DebugPrint(fb) << std::endl;
   }
 
   // Load mwm tree only if we need it
