@@ -86,26 +86,6 @@ public:
     });
   }
 
-  bool Contains(feature::FeatureBuilder const & fb) const
-  {
-    using namespace boost::geometry;
-
-    bool contains = false;
-    m_regions.ForEach([&](Region const & rgn) {
-      if (contains || !rgn.GetRect().IsIntersect(fb.GetLimitRect()))
-        return;
-
-      auto const & ring = static_cast<Ring const &>(rgn.Data());
-      if ((fb.IsPoint() && intersects(ring, fb.GetKeyPoint())) ||
-          (fb.IsLine() && intersects(ring, static_cast<LineString const &>(fb.GetOuterGeometry()))) ||
-          (fb.IsArea() && intersects(ring, static_cast<Ring const &>(fb.GetOuterGeometry()))))
-      {
-        contains = true;
-      }
-    });
-    return contains;
-  }
-
   // TODO(maksimandrianov): Remove it, after removing Polygonizer class.
   mutable int32_t m_index = -1;
 

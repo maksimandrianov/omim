@@ -127,17 +127,17 @@ public:
     rawGenerator.GenerateCountries();
     TEST(rawGenerator.Execute(), ());
 
-    TestCountry(northAuckland, 1811920 /* fbsCnt */, 12204488 /* pointsCnt */, 1007316 /* pointCnt */,
-                205471 /* lineCnt */, 599133 /* areaCnt */, 212089 /* poiCnt */,
+    TestCountry(northAuckland, 1811915 /* fbsCnt */, 12195892 /* pointsCnt */, 1007316 /* pointCnt */,
+                205469 /* lineCnt */, 599130 /* areaCnt */, 212087 /* poiCnt */,
                 521 /* cityTownOrVillageCnt */, 47 /* popularAttractionCnt */, 3557 /* bookingHotelsCnt */);
-    TestCountry(northWellington, 797772 /* fbsCnt */, 7772400 /* pointsCnt */, 460437 /* pointCnt */,
-                87059 /* lineCnt */, 250276 /* areaCnt */, 95651 /* poiCnt */,
+    TestCountry(northWellington, 797769 /* fbsCnt */, 7772261 /* pointsCnt */, 460437 /* pointCnt */,
+                87058 /* lineCnt */, 250274 /* areaCnt */, 95651 /* poiCnt */,
                 297 /* cityTownOrVillageCnt */, 17 /* popularAttractionCnt */, 1062 /* bookingHotelsCnt */);
-    TestCountry(southCanterbury, 636925 /* fbsCnt */, 6984379 /* pointsCnt */, 397622 /* pointCnt */,
-                81712 /* lineCnt */, 157591 /* areaCnt */, 89249 /* poiCnt */,
+    TestCountry(southCanterbury, 636922 /* fbsCnt */, 6984348 /* pointsCnt */, 397622 /* pointCnt */,
+                81712 /* lineCnt */, 157588 /* areaCnt */, 89249 /* poiCnt */,
                 331 /* cityTownOrVillageCnt */, 42 /* popularAttractionCnt */, 2085 /* bookingHotelsCnt */);
-    TestCountry(southSouthland, 340492 /* fbsCnt */, 5342809 /* pointsCnt */, 185845 /* pointCnt */,
-                40124 /* lineCnt */, 114523 /* areaCnt */, 40497 /* poiCnt */,
+    TestCountry(southSouthland, 340491 /* fbsCnt */, 5342804 /* pointsCnt */, 185845 /* pointCnt */,
+                40124 /* lineCnt */, 114522 /* areaCnt */, 40497 /* poiCnt */,
                 297 /* cityTownOrVillageCnt */, 41 /* popularAttractionCnt */, 1621 /* bookingHotelsCnt */);
   }
 
@@ -293,17 +293,17 @@ UNIT_CLASS_TEST(FeatureIntegrationTests, CheckGeneratedData)
   FeatureIntegrationTests::CheckGeneratedData();
 }
 
-//UNIT_CLASS_TEST(FeatureIntegrationTests, BuildWorldOneThread)
-//{
-//  FeatureIntegrationTests::BuildWorldOneThread();
-//}
+UNIT_CLASS_TEST(FeatureIntegrationTests, BuildWorldOneThread)
+{
+  FeatureIntegrationTests::BuildWorldOneThread();
+}
 
-//UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCountriesOneThread)
-//{
-//  FeatureIntegrationTests::BuildCountriesOneThread();
-//}
+UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCountriesOneThread)
+{
+  FeatureIntegrationTests::BuildCountriesOneThread();
+}
 
-//UNIT_CLASS_TEST(FeatureIntegrationTests, CheckGeneratedDataOneThread)
-//{
-//  FeatureIntegrationTests::CheckGeneratedDataOneThread();
-//}
+UNIT_CLASS_TEST(FeatureIntegrationTests, CheckGeneratedDataOneThread)
+{
+  FeatureIntegrationTests::CheckGeneratedDataOneThread();
+}

@@ -13,6 +13,7 @@
 #include "generator/intermediate_data.hpp"
 #include "generator/intermediate_elements.hpp"
 #include "generator/osm_source.hpp"
+#include "generator/osm2type.hpp"
 #include "generator/translator.hpp"
 
 #include "indexer/classificator_loader.hpp"
@@ -39,6 +40,14 @@ using namespace std;
 namespace
 {
 string const kSpeedCameraTag = "<tag k=\"highway\" v=\"speed_camera\"/>";
+
+feature::FeatureBuilder MakeFeatureBuilderWithParams(OsmElement & element)
+{
+  feature::FeatureBuilder fb;
+  auto & params = fb.GetParams();
+  ftype::GetNameAndType(&element, params);
+  return fb;
+}
 
 class TranslatorForTest : public Translator
 {
@@ -118,6 +127,78 @@ public:
     });
 
     return answers == trueAnswers;
+
+  }
+
+  void TestMergeCollectors()
+  {
+    Platform & platform = GetPlatform();
+    auto const & writableDir = platform.WritableDir();
+    GenerateInfo genInfo;
+    // Generate intermediate data.
+    genInfo.m_intermediateDir = writableDir;
+    auto const filename = genInfo.GetIntermediateFileName(CAMERAS_TO_WAYS_FILENAME);
+    auto collector1 = std::make_shared<CameraCollector>(filename);
+    auto collector2 = collector1->Clone();
+    {
+      OsmElement el;
+      el.m_id = 1;
+      el.m_type = OsmElement::EntityType::Node;
+      el.m_tags = {{"highway", "speed_camera"}};
+      collector1->CollectFeature(MakeFeatureBuilderWithParams(el), el);
+    }
+    {
+      OsmElement el;
+      el.m_id = 2;
+      el.m_type = OsmElement::EntityType::Node;
+      el.m_tags = {{"highway", "speed_camera"}};
+      collector2->CollectFeature(MakeFeatureBuilderWithParams(el), el);
+    }
+    {
+      OsmElement el;
+      el.m_id = 3;
+      el.m_type = OsmElement::EntityType::Node;
+      el.m_tags = {{"highway", "speed_camera"}};
+      collector1->CollectFeature(MakeFeatureBuilderWithParams(el), el);
+    }
+    {
+      OsmElement el;
+      el.m_id = 4;
+      el.m_type = OsmElement::EntityType::Node;
+      collector2->CollectFeature(MakeFeatureBuilderWithParams(el), el);
+    }
+    {
+      OsmElement el;
+      el.m_id = 10;
+      el.m_type = OsmElement::EntityType::Way;
+      el.m_tags = {{"highway", "unclassified"}};
+      el.AddNd(1 /* ref */);
+      el.AddNd(4 /* ref */);
+      collector1->CollectFeature(MakeFeatureBuilderWithParams(el), el);
+    }
+    {
+      OsmElement el;
+      el.m_id = 20;
+      el.m_type = OsmElement::EntityType::Way;
+      el.m_tags = {{"highway", "unclassified"}};
+      el.AddNd(1 /* ref */);
+      el.AddNd(2 /* ref */);
+      el.AddNd(3 /* ref */);
+      collector2->CollectFeature(MakeFeatureBuilderWithParams(el), el);
+    }
+
+    collector1->Merge(*collector2);
+    collector1->Save();
+    set<pair<uint64_t, uint64_t>> trueAnswers = {
+      {1, 10}, {1, 20}, {2, 20}, {3, 20}
+    };
+    set<pair<uint64_t, uint64_t>> answers;
+    collector1->m_processor.ForEachCamera([&](auto const & camera, auto const & ways) {
+      for (auto const & w : ways)
+        answers.emplace(camera.m_id, w);
+    });
+
+    TEST(answers == trueAnswers, ());
   }
 };
 
@@ -250,4 +331,9 @@ UNIT_CLASS_TEST(TestCameraCollector, test_5)
   set<pair<uint64_t, uint64_t>> trueAnswers = {};
 
   TEST(TestCameraCollector::Test(osmSourceXML, trueAnswers), ());
+}
+
+UNIT_CLASS_TEST(TestCameraCollector, Merge)
+{
+  TestCameraCollector::TestMergeCollectors();
 }

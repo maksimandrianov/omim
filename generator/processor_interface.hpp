@@ -43,7 +43,7 @@ private:
   void FailIfMethodUnsupported() const { CHECK(false, ("This method is unsupported.")); }
 };
 
-size_t static const kAffilationsBufferSize = 256;
+size_t static const kAffilationsBufferSize = 512;
 
 struct ProcessedData
 {

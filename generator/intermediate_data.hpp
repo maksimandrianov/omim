@@ -75,6 +75,7 @@ class IndexFileReader
 public:
   using Value = uint64_t;
 
+  IndexFileReader() = default;
   explicit IndexFileReader(std::string const & name);
 
   bool GetValueByKey(Key key, Value & value) const;
@@ -127,7 +128,8 @@ private:
 class OSMElementCacheReader
 {
 public:
-  explicit OSMElementCacheReader(std::string const & name, bool preload = false);
+  explicit OSMElementCacheReader(std::string const & name, bool preload = false,
+                                 bool forceReload = false);
 
   template <class Value>
   bool Read(Key id, Value & value)
@@ -198,7 +200,7 @@ class IntermediateDataReader
 {
 public:
   IntermediateDataReader(PointStorageReaderInterface const & nodes,
-                         feature::GenerateInfo & info);
+                         feature::GenerateInfo & info, bool forceReload = false);
 
   // TODO |GetNode()|, |lat|, |lon| are used as y, x in real.
   bool GetNode(Key id, double & lat, double & lon) const { return m_nodes.GetPoint(id, lat, lon); }
