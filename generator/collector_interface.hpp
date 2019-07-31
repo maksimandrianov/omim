@@ -57,6 +57,7 @@ public:
   virtual void Collect(OsmElement const &) {}
   virtual void CollectRelation(RelationElement const &) {}
   virtual void CollectFeature(feature::FeatureBuilder const &, OsmElement const &) {}
+  virtual void Clear() = 0;
   virtual void Save() = 0;
 
   virtual void Merge(CollectorInterface const &) = 0;

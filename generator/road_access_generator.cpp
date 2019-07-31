@@ -312,6 +312,7 @@ void RoadAccessTagProcessor::Process(FeatureBuilder const & fb, OsmElement const
     return;
 
   m_roads.emplace(elem.m_id, elem.m_nodes);
+  m_roads[elem.m_id].shrink_to_fit();
 }
 
 void RoadAccessTagProcessor::Write(std::stringstream & stream)
@@ -338,6 +339,13 @@ void RoadAccessTagProcessor::Write(std::stringstream & stream)
              << pointIdx + 1 << endl;
     }
   }
+}
+
+void RoadAccessTagProcessor::Clear()
+{
+  m_barriers = {};
+  m_wayToAccess = {};
+  m_roads = {};
 }
 
 void RoadAccessTagProcessor::Merge(RoadAccessTagProcessor const & other)
@@ -406,6 +414,12 @@ void RoadAccessWriter::CollectFeature(FeatureBuilder const & fb, OsmElement cons
 {
   for (auto & p : m_tagProcessors)
     p.Process(fb, elem);
+}
+
+void RoadAccessWriter::Clear()
+{
+  for (auto & p : m_tagProcessors)
+    p.Clear();
 }
 
 void RoadAccessWriter::Save()

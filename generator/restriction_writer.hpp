@@ -42,6 +42,7 @@ public:
   Clone(std::shared_ptr<generator::cache::IntermediateDataReader> const & cache = {}) const override;
 
   void CollectRelation(RelationElement const & relationElement) override;
+  void Clear() override;
   void Save() override;
 
   void Merge(generator::CollectorInterface const & collector) override;

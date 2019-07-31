@@ -41,6 +41,7 @@ public:
   // TranslatorInterface overrides:
   void Emit(OsmElement & element) override;
   void Flush() override;
+  void Clear() override;
   bool Finish() override;
 
 protected:

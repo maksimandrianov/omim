@@ -31,6 +31,12 @@ void TranslatorCollection::Flush()
     t->Flush();
 }
 
+void TranslatorCollection::Clear()
+{
+  for (auto & t : m_collection)
+    t->Clear();
+}
+
 bool TranslatorCollection::Finish()
 {
   return std::all_of(std::begin(m_collection), std::end(m_collection), [](auto & t) {

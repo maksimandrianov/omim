@@ -203,6 +203,12 @@ void RestrictionWriter::CollectRelation(RelationElement const & relationElement)
   m_stream << toOsmId << '\n';
 }
 
+void RestrictionWriter::Clear()
+{
+  m_stream.str({});
+  m_stream.clear();
+}
+
 void RestrictionWriter::Save()
 {
   std::ofstream stream;

@@ -281,6 +281,9 @@ public:
 
   void Process(feature::FeatureBuilder & fb)
   {
+    if (fb.GetMostGenericOsmId().GetSerialId() == 1834818)
+      LOG(LINFO, (1));
+
     auto const forcePushToWorld = generator::FilterWorld::IsPopularAttraction(fb, m_popularPlacesFilename) ||
                                   generator::FilterWorld::IsInternationalAirport(fb);
 

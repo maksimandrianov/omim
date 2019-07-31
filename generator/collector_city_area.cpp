@@ -27,6 +27,11 @@ void CityAreaCollector::CollectFeature(FeatureBuilder const & feature, OsmElemen
     m_boundaries.emplace_back(feature);
 }
 
+void CityAreaCollector::Clear()
+{
+  m_boundaries = {};
+}
+
 void CityAreaCollector::Save()
 {
   FeatureBuilderWriter<serialization_policy::MaxAccuracy> collector(GetFilename());
@@ -46,5 +51,6 @@ void CityAreaCollector::MergeInto(CityAreaCollector & collector) const
 {
   std::copy(std::begin(m_boundaries), std::end(m_boundaries),
             std::back_inserter(collector.m_boundaries));
+  collector.m_boundaries.shrink_to_fit();
 }
 }  // namespace generator

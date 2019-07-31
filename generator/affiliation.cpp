@@ -18,7 +18,7 @@ std::vector<std::string> CountriesFilesAffiliation::GetAffiliations(FeatureBuild
 
   // todo(m.andrianov): We need to explore this optimization better. There is a hypothesis: some
   // elements belong to a rectangle, but do not belong to the exact boundary.
-  if (m_haveBordersForWholeWorld && countriesContainer.size() == 1)
+  if (true && countriesContainer.size() == 1)
   {
     borders::CountryPolygons const & countryPolygons = countriesContainer.front();
     countries.emplace_back(countryPolygons.GetName());

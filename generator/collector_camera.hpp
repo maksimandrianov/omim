@@ -67,6 +67,7 @@ public:
 
   void FillCameraInWays();
 
+  void Clear();
   void Merge(CameraProcessor const & cameraProcessor);
 
 private:
@@ -88,6 +89,7 @@ public:
   // We will process all nodes before ways because of o5m format:
   // all nodes are first, then all ways, then all relations.
   void CollectFeature(feature::FeatureBuilder const & feature, OsmElement const & element) override;
+  void Clear() override;
   void Save() override;
 
   void Merge(generator::CollectorInterface const & collector) override;

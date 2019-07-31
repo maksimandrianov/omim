@@ -131,6 +131,12 @@ void CollectorRegionInfo::Collect(OsmElement const & el)
   }
 }
 
+void CollectorRegionInfo::Clear()
+{
+  m_mapRegionData = {};
+  m_mapIsoCode = {};
+}
+
 void CollectorRegionInfo::Save()
 {
   FileWriter writer(GetFilename());

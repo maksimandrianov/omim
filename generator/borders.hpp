@@ -17,21 +17,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/register/point.hpp>
-#include <boost/geometry/geometries/register/ring.hpp>
-#include <boost/geometry/geometries/register/linestring.hpp>
-#include <boost/geometry/geometries/register/multi_polygon.hpp>
-
 #define BORDERS_DIR "borders/"
 #define BORDERS_EXTENSION ".poly"
-
-struct Ring : std::vector<m2::PointD> {};
-struct LineString : std::vector<m2::PointD> {};
-
-BOOST_GEOMETRY_REGISTER_POINT_2D(m2::PointD, double, cs::cartesian, x, y);
-BOOST_GEOMETRY_REGISTER_RING(Ring);
-BOOST_GEOMETRY_REGISTER_LINESTRING(LineString);
 
 namespace borders
 {
@@ -86,9 +73,6 @@ public:
     });
   }
 
-  // TODO(maksimandrianov): Remove it, after removing Polygonizer class.
-  mutable int32_t m_index = -1;
-
 private:
   std::string m_name;
   RegionsContainer m_regions;
@@ -114,12 +98,6 @@ public:
     return m_regionsTree.FindNode([&](auto const & countryPolygons) {
       return countryPolygons.GetName() == name;
     });
-  }
-
-  // TODO(maksimandrianov): Remove it, after removing Polygonizer class.
-  void Add(CountryPolygons const & country, m2::RectD const & rect)
-  {
-    m_regionsTree.Add(country, rect);
   }
 
   CountryPolygons const & GetRegionByName(std::string const & name) const

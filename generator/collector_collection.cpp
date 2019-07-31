@@ -35,6 +35,12 @@ void CollectorCollection::CollectFeature(FeatureBuilder const & feature, OsmElem
     c->CollectFeature(feature, element);
 }
 
+void CollectorCollection::Clear()
+{
+  for (auto & c : m_collection)
+    c->Clear();
+}
+
 void CollectorCollection::Save()
 {
   for (auto & c : m_collection)

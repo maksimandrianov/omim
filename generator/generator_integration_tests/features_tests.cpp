@@ -273,37 +273,37 @@ private:
   feature::GenerateInfo m_genInfo;
 };
 
-UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCoasts)
-{
-  FeatureIntegrationTests::BuildCoasts();
-}
+//UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCoasts)
+//{
+//  FeatureIntegrationTests::BuildCoasts();
+//}
 
 UNIT_CLASS_TEST(FeatureIntegrationTests, BuildWorld)
 {
   FeatureIntegrationTests::BuildWorld();
 }
 
-UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCountries)
-{
-  FeatureIntegrationTests::BuildCountries();
-}
+//UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCountries)
+//{
+//  FeatureIntegrationTests::BuildCountries();
+//}
 
-UNIT_CLASS_TEST(FeatureIntegrationTests, CheckGeneratedData)
-{
-  FeatureIntegrationTests::CheckGeneratedData();
-}
+//UNIT_CLASS_TEST(FeatureIntegrationTests, CheckGeneratedData)
+//{
+//  FeatureIntegrationTests::CheckGeneratedData();
+//}
 
-UNIT_CLASS_TEST(FeatureIntegrationTests, BuildWorldOneThread)
-{
-  FeatureIntegrationTests::BuildWorldOneThread();
-}
+//UNIT_CLASS_TEST(FeatureIntegrationTests, BuildWorldOneThread)
+//{
+//  FeatureIntegrationTests::BuildWorldOneThread();
+//}
 
-UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCountriesOneThread)
-{
-  FeatureIntegrationTests::BuildCountriesOneThread();
-}
+//UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCountriesOneThread)
+//{
+//  FeatureIntegrationTests::BuildCountriesOneThread();
+//}
 
-UNIT_CLASS_TEST(FeatureIntegrationTests, CheckGeneratedDataOneThread)
-{
-  FeatureIntegrationTests::CheckGeneratedDataOneThread();
-}
+//UNIT_CLASS_TEST(FeatureIntegrationTests, CheckGeneratedDataOneThread)
+//{
+//  FeatureIntegrationTests::CheckGeneratedDataOneThread();
+//}

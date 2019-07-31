@@ -23,6 +23,7 @@ public:
   Clone(std::shared_ptr<cache::IntermediateDataReader> const & = {}) const override;
 
   void CollectFeature(feature::FeatureBuilder const & feature, OsmElement const &) override;
+  void Clear() override;
   void Save() override;
 
   void Merge(generator::CollectorInterface const & collector) override;

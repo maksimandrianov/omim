@@ -45,6 +45,7 @@ public:
 
   void Process(feature::FeatureBuilder const & fb, OsmElement const & elem);
   void Write(std::stringstream & stream);
+  void Clear();
   void Merge(RoadAccessTagProcessor const & roadAccessTagProcessor);
 
 private:
@@ -78,6 +79,7 @@ public:
   Clone(std::shared_ptr<generator::cache::IntermediateDataReader> const & = {}) const override;
 
   void CollectFeature(feature::FeatureBuilder const & fb, OsmElement const & elem) override;
+  void Clear() override;
   void Save() override;
 
   void Merge(generator::CollectorInterface const & collector) override;

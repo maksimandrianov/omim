@@ -310,8 +310,10 @@ bool TranslatorsPool::Finish()
   auto const & translator = m_translators.front();
   for (size_t i = 1; i < m_translators.size(); ++i)
   {
-    m_translators[i]->Flush();
-    translator->Merge(*m_translators[i]);
+    auto & current = m_translators[i];
+    current->Flush();
+    translator->Merge(*current);
+    current->Clear();
   }
 
   translator->Flush();
@@ -363,14 +365,17 @@ void RawGeneratorWriter::Write(vector<ProcessedData> const & vecChanks)
       if (affiliation.empty())
         continue;
 
-      if (m_collectors.count(affiliation) == 0)
+      auto collectorIt = m_collectors.find(affiliation);
+      if (collectorIt == std::cend(m_collectors))
       {
         auto path = base::JoinPath(m_path, affiliation + DATA_FILE_EXTENSION_TMP);
-        m_collectors.emplace(affiliation, make_unique<FileWriter>(move(path)));
+        collectorIt = m_collectors.emplace(affiliation, make_unique<FileWriter>(move(path))).first;
       }
 
-      WriteVarUint(*m_collectors[affiliation], static_cast<uint32_t>(chank.m_buffer.size()));
-      m_collectors[affiliation]->Write(chank.m_buffer.data(), chank.m_buffer.size());
+      auto & collector = collectorIt->second;
+      auto const & buffer = chank.m_buffer;
+      WriteVarUint(*collector, static_cast<uint32_t>(buffer.size()));
+      collector->Write(buffer.data(), buffer.size());
     }
   }
 }
@@ -499,7 +504,8 @@ RawGenerator::FinalProcessorPtr RawGenerator::CreateCoslineFinalProcessor()
 RawGenerator::FinalProcessorPtr RawGenerator::CreateCountryFinalProcessor()
 {
   auto finalProcessor = make_shared<CountryFinalProcessor>(m_genInfo.m_targetDir, m_genInfo.m_tmpDir,
-                                                           m_genInfo.m_haveBordersForWholeWorld, m_threadsCount);
+                                                           m_genInfo.m_haveBordersForWholeWorld,
+                                                           m_threadsCount);
   finalProcessor->SetBooking(m_genInfo.m_bookingDataFilename);
   finalProcessor->SetCitiesAreas(m_genInfo.GetIntermediateFileName(CITIES_AREAS_TMP_FILENAME));
   finalProcessor->SetPromoCatalog(m_genInfo.m_promoCatalogCitiesFilename);

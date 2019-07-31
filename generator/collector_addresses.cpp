@@ -28,6 +28,12 @@ void CollectorAddresses::CollectFeature(feature::FeatureBuilder const & feature,
     m_stringStream << addr << "\n";
 }
 
+void CollectorAddresses::Clear()
+{
+  m_stringStream.str({});
+  m_stringStream.clear();
+}
+
 void CollectorAddresses::Save()
 {
   std::ofstream stream;

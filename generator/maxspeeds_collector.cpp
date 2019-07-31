@@ -111,6 +111,11 @@ void MaxspeedsCollector::CollectFeature(FeatureBuilder const &, OsmElement const
   m_data.push_back(ss.str());
 }
 
+void MaxspeedsCollector::Clear()
+{
+  m_data = {};
+}
+
 void MaxspeedsCollector::Save()
 {
   LOG(LINFO, ("Saving maxspeed tag values to", GetFilename()));
@@ -133,5 +138,6 @@ void MaxspeedsCollector::Merge(CollectorInterface const & collector)
 void MaxspeedsCollector::MergeInto(MaxspeedsCollector & collector) const
 {
   copy(begin(m_data), end(m_data), back_inserter(collector.m_data));
+  collector.m_data.shrink_to_fit();
 }
 }  // namespace generator

@@ -37,6 +37,7 @@ public:
   virtual void Preprocess(OsmElement &) {}
   virtual void Emit(OsmElement & element) = 0;
   virtual void Flush() = 0;
+  virtual void Clear() = 0;
   virtual bool Finish() = 0;
 
   virtual void Merge(TranslatorInterface const &) = 0;

@@ -67,6 +67,11 @@ void Translator::Flush()
   m_processor->Flush();
 }
 
+void Translator::Clear()
+{
+  m_collector->Clear();
+}
+
 bool Translator::Finish()
 {
   m_collector->Save();
