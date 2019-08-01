@@ -5,9 +5,9 @@
 
 #include "indexer/ftypes_matcher.hpp"
 
-using namespace feature;
-
 #include <fstream>
+
+using namespace feature;
 
 namespace generator
 {
@@ -26,12 +26,6 @@ void CollectorAddresses::CollectFeature(feature::FeatureBuilder const & feature,
   auto const & checker = ftypes::IsBuildingChecker::Instance();
   if (checker(feature.GetTypes()) && feature.FormatFullAddress(addr))
     m_stringStream << addr << "\n";
-}
-
-void CollectorAddresses::Clear()
-{
-  m_stringStream.str({});
-  m_stringStream.clear();
 }
 
 void CollectorAddresses::Save()

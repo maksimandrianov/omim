@@ -73,7 +73,6 @@ public:
 
   /// Add a highway segment to the collection of metalines.
   void CollectFeature(FeatureBuilder const & feature, OsmElement const & element) override;
-  void Clear() override;
   void Save() override;
 
   void Merge(generator::CollectorInterface const & collector) override;

@@ -131,7 +131,6 @@ public:
   Clone(std::shared_ptr<cache::IntermediateDataReader> const & = {}) const override;
 
   void Collect(OsmElement const & el) override;
-  void Clear() override;
   void Save() override;
 
   void Merge(CollectorInterface const & collector) override;

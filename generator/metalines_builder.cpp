@@ -189,11 +189,6 @@ void MetalinesBuilder::CollectFeature(FeatureBuilder const & feature, OsmElement
   m_data.emplace(key, std::make_shared<LineString>(element));
 }
 
-void MetalinesBuilder::Clear()
-{
-  m_data = {};
-}
-
 void MetalinesBuilder::Save()
 {
   FileWriter writer(GetFilename());

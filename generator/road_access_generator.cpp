@@ -341,13 +341,6 @@ void RoadAccessTagProcessor::Write(std::stringstream & stream)
   }
 }
 
-void RoadAccessTagProcessor::Clear()
-{
-  m_barriers = {};
-  m_wayToAccess = {};
-  m_roads = {};
-}
-
 void RoadAccessTagProcessor::Merge(RoadAccessTagProcessor const & other)
 {
   CHECK_EQUAL(m_vehicleType, other.m_vehicleType, ());
@@ -414,12 +407,6 @@ void RoadAccessWriter::CollectFeature(FeatureBuilder const & fb, OsmElement cons
 {
   for (auto & p : m_tagProcessors)
     p.Process(fb, elem);
-}
-
-void RoadAccessWriter::Clear()
-{
-  for (auto & p : m_tagProcessors)
-    p.Clear();
 }
 
 void RoadAccessWriter::Save()

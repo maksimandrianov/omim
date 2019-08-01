@@ -28,12 +28,6 @@ void CollectorTag::Collect(OsmElement const & el)
     m_stream << GetGeoObjectId(el).GetEncodedId() << "\t" << tag << "\n";
 }
 
-void CollectorTag::Clear()
-{
-  m_stream.str({});
-  m_stream.clear();
-}
-
 void CollectorTag::Save()
 {
   std::ofstream stream;

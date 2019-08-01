@@ -44,6 +44,8 @@ TranslatorWorld::Clone(std::shared_ptr<cache::IntermediateData> const & cache) c
 
 void TranslatorWorld::Preprocess(OsmElement & element)
 {
+  if (element.m_id == 1834818)
+    LOG(LINFO, (1));
   // Here we can add new tags to the elements!
   m_tagReplacer(element);
   m_tagAdmixer(element);

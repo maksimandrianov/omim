@@ -18,7 +18,6 @@ public:
   void Emit(OsmElement /* const */ & element) override;
 
   void Flush() override;
-  void Clear() override;
   bool Finish() override;
 
   void Merge(TranslatorInterface const & other) override;

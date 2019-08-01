@@ -313,7 +313,6 @@ bool TranslatorsPool::Finish()
     auto & current = m_translators[i];
     current->Flush();
     translator->Merge(*current);
-    current->Clear();
   }
 
   translator->Flush();

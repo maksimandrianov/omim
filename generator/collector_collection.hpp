@@ -31,7 +31,6 @@ public:
   void Collect(OsmElement const & element) override;
   void CollectRelation(RelationElement const & element) override;
   void CollectFeature(feature::FeatureBuilder const & feature, OsmElement const & element) override;
-  void Clear() override;
   void Save() override;
 
   void Merge(CollectorInterface const & collector) override;

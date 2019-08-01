@@ -111,11 +111,6 @@ void MaxspeedsCollector::CollectFeature(FeatureBuilder const &, OsmElement const
   m_data.push_back(ss.str());
 }
 
-void MaxspeedsCollector::Clear()
-{
-  m_data = {};
-}
-
 void MaxspeedsCollector::Save()
 {
   LOG(LINFO, ("Saving maxspeed tag values to", GetFilename()));

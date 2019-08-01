@@ -64,7 +64,6 @@ void CameraProcessor::ForEachCamera(Fn && toDo) const
 void CameraProcessor::ProcessWay(OsmElement const & element)
 {
   m_ways[element.m_id] = element.m_nodes;
-  m_ways[element.m_id].shrink_to_fit();
 }
 
 void CameraProcessor::FillCameraInWays()
@@ -87,12 +86,6 @@ void CameraProcessor::ProcessNode(OsmElement const & element)
   CameraInfo camera(element);
   CHECK_LESS(camera.m_speed.size(), kMaxSpeedSpeedStringLength, ());
   m_speedCameras.emplace(element.m_id, std::move(camera));
-}
-
-void CameraProcessor::Clear()
-{
-  m_speedCameras = {};
-  m_ways = {};
 }
 
 void CameraProcessor::Merge(CameraProcessor const & cameraProcessor)
@@ -158,11 +151,6 @@ void CameraCollector::Write(FileWriter & writer, CameraProcessor::CameraInfo con
   WriteToSink(writer, size);
   for (auto wayId : ways)
     WriteToSink(writer, wayId);
-}
-
-void CameraCollector::Clear()
-{
-  m_processor.Clear();
 }
 
 void CameraCollector::Save()

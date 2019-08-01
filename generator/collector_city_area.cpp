@@ -5,6 +5,12 @@
 
 #include "indexer/ftypes_matcher.hpp"
 
+#include "platform/platform.hpp"
+
+#include "coding/internal/file_data.hpp"
+
+#include "base/assert.hpp"
+
 #include <algorithm>
 #include <iterator>
 
@@ -13,7 +19,7 @@ using namespace feature;
 namespace generator
 {
 CityAreaCollector::CityAreaCollector(std::string const & filename)
-  : CollectorInterface(filename) {}
+  : CollectorInterface(filename), m_witer(GetTmpFilename()) {}
 
 std::shared_ptr<CollectorInterface>
 CityAreaCollector::Clone(std::shared_ptr<cache::IntermediateDataReader> const &) const
@@ -23,23 +29,17 @@ CityAreaCollector::Clone(std::shared_ptr<cache::IntermediateDataReader> const &)
 
 void CityAreaCollector::CollectFeature(FeatureBuilder const & feature, OsmElement const &)
 {
-  if (feature.IsArea() && ftypes::IsCityTownOrVillage(feature.GetTypes()))
-    m_boundaries.emplace_back(feature);
-}
+  if (!(feature.IsArea() && ftypes::IsCityTownOrVillage(feature.GetTypes())))
+    return;
 
-void CityAreaCollector::Clear()
-{
-  m_boundaries = {};
+  auto copy = feature;
+  if (copy.PreSerialize())
+    m_witer.Write(copy);
 }
 
 void CityAreaCollector::Save()
 {
-  FeatureBuilderWriter<serialization_policy::MaxAccuracy> collector(GetFilename());
-  for (auto & boundary : m_boundaries)
-  {
-    if (boundary.PreSerialize())
-      collector.Write(boundary);
-  }
+  CHECK(base::CopyFileX(GetTmpFilename(), GetFilename()), ());
 }
 
 void CityAreaCollector::Merge(generator::CollectorInterface const & collector)
@@ -49,8 +49,9 @@ void CityAreaCollector::Merge(generator::CollectorInterface const & collector)
 
 void CityAreaCollector::MergeInto(CityAreaCollector & collector) const
 {
-  std::copy(std::begin(m_boundaries), std::end(m_boundaries),
-            std::back_inserter(collector.m_boundaries));
-  collector.m_boundaries.shrink_to_fit();
+  using namespace serialization_policy;
+  ForEachFromDatRawFormat<MaxAccuracy>(GetTmpFilename(), [&](auto const & fb, auto const &) {
+    collector.m_witer.Write(fb);
+  });
 }
 }  // namespace generator
