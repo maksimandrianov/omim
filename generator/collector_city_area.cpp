@@ -37,6 +37,11 @@ void CityAreaCollector::CollectFeature(FeatureBuilder const & feature, OsmElemen
     m_witer.Write(copy);
 }
 
+void CityAreaCollector::Flush()
+{
+  m_witer.Flush();
+}
+
 void CityAreaCollector::Save()
 {
   CHECK(base::CopyFileX(GetTmpFilename(), GetFilename()), ());

@@ -64,6 +64,7 @@ void Translator::Emit(OsmElement & element)
 
 void Translator::Flush()
 {
+  m_collector->Flush();
   m_processor->Flush();
 }
 
