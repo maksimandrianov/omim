@@ -15,11 +15,13 @@
 #include <iterator>
 
 using namespace feature;
+using namespace feature::serialization_policy;
 
 namespace generator
 {
 CityAreaCollector::CityAreaCollector(std::string const & filename)
-  : CollectorInterface(filename), m_witer(GetTmpFilename()) {}
+  : CollectorInterface(filename),
+    m_witer(std::make_unique<FeatureBuilderWriter<MaxAccuracy>>(GetTmpFilename())) {}
 
 std::shared_ptr<CollectorInterface>
 CityAreaCollector::Clone(std::shared_ptr<cache::IntermediateDataReader> const &) const
@@ -34,17 +36,18 @@ void CityAreaCollector::CollectFeature(FeatureBuilder const & feature, OsmElemen
 
   auto copy = feature;
   if (copy.PreSerialize())
-    m_witer.Write(copy);
+    m_witer->Write(copy);
 }
 
-void CityAreaCollector::Flush()
+void CityAreaCollector::Finish()
 {
-  m_witer.Flush();
+  m_witer.reset({});
 }
 
 void CityAreaCollector::Save()
 {
-  CHECK(base::CopyFileX(GetTmpFilename(), GetFilename()), ());
+  if (Platform::IsFileExistsByFullPath(GetTmpFilename()))
+    CHECK(base::CopyFileX(GetTmpFilename(), GetFilename()), ());
 }
 
 void CityAreaCollector::Merge(generator::CollectorInterface const & collector)
@@ -54,9 +57,6 @@ void CityAreaCollector::Merge(generator::CollectorInterface const & collector)
 
 void CityAreaCollector::MergeInto(CityAreaCollector & collector) const
 {
-  using namespace serialization_policy;
-  ForEachFromDatRawFormat<MaxAccuracy>(GetTmpFilename(), [&](auto const & fb, auto const &) {
-    collector.m_witer.Write(fb);
-  });
+  base::AppendFileToFile(GetTmpFilename(), collector.GetTmpFilename());
 }
 }  // namespace generator

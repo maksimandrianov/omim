@@ -410,11 +410,6 @@ public:
     m_writer.Write(buffer.data(), buffer.size() * sizeof(FeatureBuilder::Buffer::value_type));
   }
 
-  void Flush()
-  {
-    m_writer.Flush();
-  }
-
 private:
   Writer m_writer;
 };

@@ -25,16 +25,16 @@ void TranslatorCollection::Emit(OsmElement /* const */ & element)
   }
 }
 
-void TranslatorCollection::Flush()
+void TranslatorCollection::Finish()
 {
   for (auto & t : m_collection)
-    t->Flush();
+    t->Finish();
 }
 
-bool TranslatorCollection::Finish()
+bool TranslatorCollection::Save()
 {
   return std::all_of(std::begin(m_collection), std::end(m_collection), [](auto & t) {
-    return t->Finish();
+    return t->Save();
   });
 }
 

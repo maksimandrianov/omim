@@ -40,8 +40,8 @@ public:
 
   // TranslatorInterface overrides:
   void Emit(OsmElement & element) override;
-  void Flush() override;
-  bool Finish() override;
+  void Finish() override;
+  bool Save() override;
 
 protected:
   template <typename T>

@@ -7,6 +7,10 @@
 
 #include "routing/restrictions_serialization.hpp"
 
+#include "platform/platform.hpp"
+
+#include "coding/internal/file_data.hpp"
+
 #include "base/assert.hpp"
 #include "base/geo_object_id.hpp"
 #include "base/logging.hpp"
@@ -96,7 +100,9 @@ RestrictionWriter::RestrictionWriter(std::string const & filename,
   : generator::CollectorInterface(filename)
   , m_cache(cache)
 {
-  m_stream << std::setprecision(20);
+  m_writer.exceptions(std::fstream::failbit | std::fstream::badbit);
+  m_writer.open(GetTmpFilename());
+  m_writer << std::setprecision(20);
 }
 
 std::shared_ptr<generator::CollectorInterface>
@@ -177,15 +183,15 @@ void RestrictionWriter::CollectRelation(RelationElement const & relationElement)
                                                                                  : ViaType::Way;
 
   auto const printHeader = [&]() { 
-    m_stream << DebugPrint(type) << "," << DebugPrint(viaType) << ",";
+    m_writer << DebugPrint(type) << "," << DebugPrint(viaType) << ",";
   };
 
   if (viaType == ViaType::Way)
   {
     printHeader();
-    m_stream << fromOsmId << ",";
+    m_writer << fromOsmId << ",";
     for (auto const & viaMember : via)
-      m_stream << viaMember.first << ",";
+      m_writer << viaMember.first << ",";
   }
   else
   {
@@ -196,19 +202,23 @@ void RestrictionWriter::CollectRelation(RelationElement const & relationElement)
       return;
 
     printHeader();
-    m_stream << x << "," << y << ",";
-    m_stream << fromOsmId << ",";
+    m_writer << x << "," << y << ",";
+    m_writer << fromOsmId << ",";
   }
 
-  m_stream << toOsmId << '\n';
+  m_writer << toOsmId << '\n';
+}
+
+void RestrictionWriter::Finish()
+{
+  if (m_writer.is_open())
+    m_writer.close();
 }
 
 void RestrictionWriter::Save()
 {
-  std::ofstream stream;
-  stream.exceptions(std::fstream::failbit | std::fstream::badbit);
-  stream.open(GetFilename());
-  stream << m_stream.str();
+  if (Platform::IsFileExistsByFullPath(GetTmpFilename()))
+    CHECK(base::CopyFileX(GetTmpFilename(), GetFilename()), ());
 }
 
 void RestrictionWriter::Merge(generator::CollectorInterface const & collector)
@@ -218,7 +228,7 @@ void RestrictionWriter::Merge(generator::CollectorInterface const & collector)
 
 void RestrictionWriter::MergeInto(RestrictionWriter & collector) const
 {
-  collector.m_stream << m_stream.str();
+  base::AppendFileToFile(GetTmpFilename(), collector.GetTmpFilename());
 }
 
 std::string DebugPrint(RestrictionWriter::ViaType const & type)

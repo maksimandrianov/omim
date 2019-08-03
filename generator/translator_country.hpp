@@ -54,7 +54,7 @@ public:
 
   // TranslatorInterface overrides:
   void Preprocess(OsmElement & element) override;
-  bool Finish() override;
+  bool Save() override;
 
   std::shared_ptr<TranslatorInterface>
   Clone(std::shared_ptr<cache::IntermediateData> const & cache) const override;

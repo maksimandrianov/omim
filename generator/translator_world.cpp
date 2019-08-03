@@ -87,11 +87,11 @@ void TranslatorWorldWithAds::Preprocess(OsmElement & element)
   TranslatorWorld::Preprocess(element);
 }
 
-bool TranslatorWorldWithAds::Finish()
+bool TranslatorWorldWithAds::Save()
 {
   MixFakeNodes(GetPlatform().ResourcesDir() + MIXED_NODES_FILE,
                std::bind(&TranslatorWorldWithAds::Emit, this, std::placeholders::_1));
-  return TranslatorWorld::Finish();
+  return TranslatorWorld::Save();
 }
 
 void TranslatorWorldWithAds::Merge(TranslatorInterface const & other)

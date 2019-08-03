@@ -126,6 +126,7 @@ public:
         answers.emplace(camera.m_id, w);
     });
 
+
     return answers == trueAnswers;
 
   }
@@ -187,6 +188,8 @@ public:
       collector2->CollectFeature(MakeFeatureBuilderWithParams(el), el);
     }
 
+    collector1->Finish();
+    collector2->Finish();
     collector1->Merge(*collector2);
     collector1->Save();
     set<pair<uint64_t, uint64_t>> trueAnswers = {

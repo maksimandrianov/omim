@@ -87,11 +87,8 @@ TranslatorCountry::TranslatorCountry(std::shared_ptr<FeatureProcessorInterface> 
   SetFilter(filters);
 
   auto collectors = std::make_shared<CollectorCollection>();
-  collectors->Append(std::make_shared<CollectorTag>(info.m_idToWikidataFilename, "wikidata" /* tagKey */,
-                                                    WikiDataValidator, true /* ignoreIfNotOpen */));
   collectors->Append(std::make_shared<feature::MetalinesBuilder>(info.GetIntermediateFileName(METALINES_FILENAME)));
   collectors->Append(std::make_shared<CityAreaCollector>(info.GetIntermediateFileName(CITIES_AREAS_TMP_FILENAME)));
-
   // These are the four collector that collect additional information for the future building of routing section.
   collectors->Append(std::make_shared<MaxspeedsCollector>(info.GetIntermediateFileName(MAXSPEEDS_FILENAME)));
   collectors->Append(std::make_shared<routing::RestrictionWriter>(info.GetIntermediateFileName(RESTRICTIONS_FILENAME), cache->GetCache()));
@@ -99,6 +96,9 @@ TranslatorCountry::TranslatorCountry(std::shared_ptr<FeatureProcessorInterface> 
   collectors->Append(std::make_shared<routing::CameraCollector>(info.GetIntermediateFileName(CAMERAS_TO_WAYS_FILENAME)));
   if (info.m_genAddresses)
     collectors->Append(std::make_shared<CollectorAddresses>(info.GetAddressesFileName()));
+  if (!info.m_idToWikidataFilename.empty())
+    collectors->Append(std::make_shared<CollectorTag>(info.m_idToWikidataFilename,
+                                                      "wikidata" /* tagKey */, WikiDataValidator));
   SetCollector(collectors);
 }
 
@@ -164,11 +164,11 @@ void TranslatorCountryWithAds::Preprocess(OsmElement & element)
   TranslatorCountry::Preprocess(element);
 }
 
-bool TranslatorCountryWithAds::Finish()
+bool TranslatorCountryWithAds::Save()
 {
   MixFakeNodes(GetPlatform().ResourcesDir() + MIXED_NODES_FILE,
                std::bind(&TranslatorCountryWithAds::Emit, this, std::placeholders::_1));
-  return TranslatorCountry::Finish();
+  return TranslatorCountry::Save();
 }
 
 void TranslatorCountryWithAds::Merge(TranslatorInterface const & other)

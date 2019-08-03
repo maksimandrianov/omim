@@ -307,16 +307,37 @@ void TranslatorsPool::Emit(vector<OsmElement> && elements)
 bool TranslatorsPool::Finish()
 {
   m_threadPool.WaitAndStop();
-  auto const & translator = m_translators.front();
-  for (size_t i = 1; i < m_translators.size(); ++i)
+  using TranslatorPtr = std::shared_ptr<TranslatorInterface>;
+  base::threads::ThreadSafeQueue<std::future<TranslatorPtr>> queue;
+  for (auto const & t : m_translators)
   {
-    auto & current = m_translators[i];
-    current->Flush();
-    translator->Merge(*current);
+    std::promise<TranslatorPtr> p;
+    p.set_value(t);
+    queue.Push(p.get_future());
   }
 
-  translator->Flush();
-  return translator->Finish();
+  ThreadPool pool(m_translators.size() / 2 + 1);
+  while (queue.Size() != 1)
+  {
+    std::future<TranslatorPtr> left;
+    std::future<TranslatorPtr> right;
+    queue.WaitAndPop(left);
+    queue.WaitAndPop(right);
+    queue.Push(pool.Submit([left{move(left)}, right{move(right)}]() mutable {
+      auto leftTranslator = left.get();
+      auto rigthTranslator = right.get();
+      rigthTranslator->Finish();
+      leftTranslator->Finish();
+      leftTranslator->Merge(*rigthTranslator);
+      return leftTranslator;
+    }));
+  }
+
+  std::future<TranslatorPtr> translatorFuture;
+  queue.WaitAndPop(translatorFuture);
+  auto translator = translatorFuture.get();
+  translator->Finish();
+  return translator->Save();
 }
 
 RawGeneratorWriter::RawGeneratorWriter(shared_ptr<FeatureProcessorQueue> const & queue,
@@ -548,6 +569,7 @@ bool RawGenerator::GenerateFilteredFeatures()
   RawGeneratorWriter rawGeneratorWriter(m_queue, m_genInfo.m_tmpDir);
   rawGeneratorWriter.Run();
 
+  size_t dbg = 0;
   size_t element_pos = 0;
   vector<OsmElement> elements(m_chankSize);
   while(sourseProcessor->TryRead(elements[element_pos]))
@@ -558,6 +580,9 @@ bool RawGenerator::GenerateFilteredFeatures()
     translators.Emit(move(elements));
     elements = vector<OsmElement>(m_chankSize);
     element_pos = 0;
+
+//    if (dbg++ == 32)
+//      break;
   }
   elements.resize(element_pos);
   translators.Emit(move(elements));

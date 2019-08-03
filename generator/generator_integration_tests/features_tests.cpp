@@ -265,6 +265,7 @@ private:
     m_genInfo.m_tmpDir = base::JoinPath(m_genInfo.m_intermediateDir, "tmp");
     m_genInfo.m_osmFileName = base::JoinPath(m_testPath, "planet.o5m");
     m_genInfo.m_popularPlacesFilename = m_genInfo.GetIntermediateFileName("popular_places.csv");
+    m_genInfo.m_idToWikidataFilename = m_genInfo.GetIntermediateFileName("wiki_urls.csv");
     DecompressZipArchive(base::JoinPath(options.m_dataPath, arhiveName + ".zip"), m_testPath);
   }
 
@@ -273,25 +274,25 @@ private:
   feature::GenerateInfo m_genInfo;
 };
 
-//UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCoasts)
-//{
-//  FeatureIntegrationTests::BuildCoasts();
-//}
+UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCoasts)
+{
+  FeatureIntegrationTests::BuildCoasts();
+}
 
 UNIT_CLASS_TEST(FeatureIntegrationTests, BuildWorld)
 {
   FeatureIntegrationTests::BuildWorld();
 }
 
-//UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCountries)
-//{
-//  FeatureIntegrationTests::BuildCountries();
-//}
+UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCountries)
+{
+  FeatureIntegrationTests::BuildCountries();
+}
 
-//UNIT_CLASS_TEST(FeatureIntegrationTests, CheckGeneratedData)
-//{
-//  FeatureIntegrationTests::CheckGeneratedData();
-//}
+UNIT_CLASS_TEST(FeatureIntegrationTests, CheckGeneratedData)
+{
+  FeatureIntegrationTests::CheckGeneratedData();
+}
 
 //UNIT_CLASS_TEST(FeatureIntegrationTests, BuildWorldOneThread)
 //{

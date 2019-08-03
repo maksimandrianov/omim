@@ -62,13 +62,13 @@ void Translator::Emit(OsmElement & element)
   }
 }
 
-void Translator::Flush()
+void Translator::Finish()
 {
-  m_collector->Flush();
-  m_processor->Flush();
+  m_collector->Finish();
+  m_processor->Finish();
 }
 
-bool Translator::Finish()
+bool Translator::Save()
 {
   m_collector->Save();
   return true;

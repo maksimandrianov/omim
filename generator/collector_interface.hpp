@@ -3,8 +3,10 @@
 #include "platform/platform.hpp"
 
 #include "base/assert.hpp"
+#include "base/logging.hpp"
 
 #include <atomic>
+#include <fstream>
 #include <memory>
 #include <string>
 
@@ -60,7 +62,7 @@ public:
   virtual void Collect(OsmElement const &) {}
   virtual void CollectRelation(RelationElement const &) {}
   virtual void CollectFeature(feature::FeatureBuilder const &, OsmElement const &) {}
-  virtual void Flush() {}
+  virtual void Finish() {}
   virtual void Save() = 0;
 
   virtual void Merge(CollectorInterface const &) = 0;
