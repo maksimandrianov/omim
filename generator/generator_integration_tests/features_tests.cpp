@@ -289,10 +289,10 @@ UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCountries)
   FeatureIntegrationTests::BuildCountries();
 }
 
-UNIT_CLASS_TEST(FeatureIntegrationTests, CheckGeneratedData)
-{
-  FeatureIntegrationTests::CheckGeneratedData();
-}
+//UNIT_CLASS_TEST(FeatureIntegrationTests, CheckGeneratedData)
+//{
+//  FeatureIntegrationTests::CheckGeneratedData();
+//}
 
 //UNIT_CLASS_TEST(FeatureIntegrationTests, BuildWorldOneThread)
 //{
