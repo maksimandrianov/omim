@@ -6,7 +6,7 @@
 #include "generator/feature_builder.hpp"
 #include "generator/filter_world.hpp"
 #include "generator/generate_info.hpp"
-#include "generator/osm_source.hpp"
+#include "generator/raw_generator.hpp"
 
 #include "indexer/classificator_loader.hpp"
 #include "indexer/ftypes_matcher.hpp"

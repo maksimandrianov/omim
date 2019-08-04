@@ -12,7 +12,7 @@ TranslatorCollection::Clone(std::shared_ptr<cache::IntermediateData> const & cac
 {
   auto p = std::make_shared<TranslatorCollection>();
   for (auto const & c : m_collection)
-   p->Append(c->Clone(cache));
+    p->Append(c->Clone(cache));
   return p;
 }
 

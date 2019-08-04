@@ -4,6 +4,7 @@
 #include "generator/booking_dataset.hpp"
 #include "generator/feature_builder.hpp"
 #include "generator/feature_generator.hpp"
+#include "generator/features_processing_helpers.hpp"
 #include "generator/filter_world.hpp"
 #include "generator/opentable_dataset.hpp"
 #include "generator/processor_interface.hpp"

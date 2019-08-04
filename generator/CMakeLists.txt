@@ -81,6 +81,7 @@ set(
   feature_processing_layers.hpp
   feature_sorter.cpp
   feature_sorter.hpp
+  features_processing_helpers.hpp
   filter_collection.cpp
   filter_collection.hpp
   filter_elements.cpp
@@ -148,6 +149,10 @@ set(
   promo_catalog_cities.hpp
   ratings_section_builder.cpp
   ratings_section_builder.hpp
+  raw_generator.cpp
+  raw_generator.hpp
+  raw_generator_writer.cpp
+  raw_generator_writer.hpp
   region_meta.cpp
   region_meta.hpp
   regions/admin_suburbs_marker.cpp
@@ -245,6 +250,8 @@ set(
   translator_streets.hpp
   translator_world.cpp
   translator_world.hpp
+  translators_pool.cpp
+  translators_pool.hpp
   type_helper.cpp
   type_helper.hpp
   ugc_db.cpp
