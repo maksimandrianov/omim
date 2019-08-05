@@ -120,6 +120,20 @@ public:
     return ForAnyGeometryPointEx(std::move(wrapper));
   }
 
+  template <class ToDo>
+  void ForEachOuterGeometryPoint(ToDo && toDo) const
+  {
+    if (IsPoint())
+    {
+      toDo(m_center);
+    }
+    else
+    {
+      for (auto const & pt : GetOuterGeometry())
+        toDo(pt);
+    }
+  }
+
   // To work with geometry type.
   void SetCenter(m2::PointD const & p);
   void SetLinear(bool reverseGeometry = false);

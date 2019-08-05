@@ -325,7 +325,7 @@ bool CountryFinalProcessor::Process()
 bool CountryFinalProcessor::ProcessBooking()
 {
   BookingDataset dataset(m_hotelsFilename);
-  auto const affiliation = CountriesFilesAffiliation(m_borderPath, m_haveBordersForWholeWorld);
+  auto const affiliation = CountriesFilesIndexAffiliation(m_borderPath, m_haveBordersForWholeWorld);
   {
     ThreadPool pool(m_threadsCount);
     ForEachCountry(m_temporaryMwmPath, [&](auto const & filename) {
@@ -365,7 +365,7 @@ bool CountryFinalProcessor::ProcessBooking()
 
 bool CountryFinalProcessor::ProcessCities()
 {
-  auto const affiliation = CountriesFilesAffiliation(m_borderPath, m_haveBordersForWholeWorld);
+  auto const affiliation = CountriesFilesIndexAffiliation(m_borderPath, m_haveBordersForWholeWorld);
   auto citiesHelper = m_citiesAreasTmpFilename.empty()
                       ? PlaceHelper()
                       : PlaceHelper(m_citiesAreasTmpFilename);
@@ -390,7 +390,7 @@ bool CountryFinalProcessor::ProcessCities()
 
 bool CountryFinalProcessor::ProcessCoastline()
 {
-  auto const affiliation = CountriesFilesAffiliation(m_borderPath, m_haveBordersForWholeWorld);
+  auto const affiliation = CountriesFilesIndexAffiliation(m_borderPath, m_haveBordersForWholeWorld);
   auto fbs = ReadAllDatRawFormat(m_coastlineGeomFilename);
   auto const affiliations = GetAffiliations(fbs, affiliation, m_threadsCount);
   AppendToCountries(fbs, affiliations, m_temporaryMwmPath, m_threadsCount);
@@ -406,7 +406,7 @@ bool CountryFinalProcessor::ProcessCoastline()
 
 bool CountryFinalProcessor::Finish()
 {
-  auto const affiliation = CountriesFilesAffiliation(m_borderPath, m_haveBordersForWholeWorld);
+  auto const affiliation = CountriesFilesIndexAffiliation(m_borderPath, m_haveBordersForWholeWorld);
   ThreadPool pool(m_threadsCount);
   ForEachCountry(m_temporaryMwmPath, [&](auto const & filename) {
     pool.SubmitWork([&, filename]() {

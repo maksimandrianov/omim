@@ -194,7 +194,6 @@ bool RawGenerator::GenerateFilteredFeatures()
 
   rawGeneratorWriter.ShutdownAndJoin();
   m_names = rawGeneratorWriter.GetNames();
-  LOG(LINFO, ("Names:", m_names));
   return true;
 }
 }  // namespace generator
