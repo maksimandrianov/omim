@@ -230,6 +230,14 @@ private:
         ++bookingHotelsCntReal;
     }
 
+    LOG(LINFO, ("fbsCnt", fbs.size(), fbsCnt));
+    LOG(LINFO, ("pointsCntReal", pointsCntReal, pointsCnt));
+    LOG(LINFO, ("pointCntReal", pointCntReal, pointCnt));
+    LOG(LINFO, ("lineCntReal", lineCntReal, lineCnt));
+    LOG(LINFO, ("areaCntReal", areaCntReal, areaCnt));
+    LOG(LINFO, ("poiCntReal", poiCntReal, poiCnt));
+
+
     TEST_EQUAL(fbs.size(), fbsCnt, ());
     TEST_EQUAL(pointsCntReal, pointsCnt, ());
     TEST_EQUAL(pointCntReal, pointCnt, ());
@@ -274,15 +282,15 @@ private:
   feature::GenerateInfo m_genInfo;
 };
 
-UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCoasts)
-{
-  FeatureIntegrationTests::BuildCoasts();
-}
+//UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCoasts)
+//{
+//  FeatureIntegrationTests::BuildCoasts();
+//}
 
-UNIT_CLASS_TEST(FeatureIntegrationTests, BuildWorld)
-{
-  FeatureIntegrationTests::BuildWorld();
-}
+//UNIT_CLASS_TEST(FeatureIntegrationTests, BuildWorld)
+//{
+//  FeatureIntegrationTests::BuildWorld();
+//}
 
 UNIT_CLASS_TEST(FeatureIntegrationTests, BuildCountries)
 {

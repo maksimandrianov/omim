@@ -212,6 +212,18 @@ public:
   }
 
   template <typename ToDo>
+  bool ForAny(ToDo && toDo) const
+  {
+    for (Value const & v : m_tree)
+    {
+      if (toDo(v.m_val))
+        return true;
+    }
+
+    return m_tree.empty();
+  }
+
+  template <typename ToDo>
   void ForEachEx(ToDo && toDo) const
   {
     for (Value const & v : m_tree)

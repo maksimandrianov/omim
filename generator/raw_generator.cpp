@@ -8,6 +8,8 @@
 
 #include "base/thread_pool_computational.hpp"
 
+#include <chrono>
+
 #include "defines.hpp"
 
 namespace generator
@@ -170,6 +172,9 @@ bool RawGenerator::GenerateFilteredFeatures()
     break;
   }
 
+  using namespace std::chrono;
+  milliseconds t = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+
   TranslatorsPool translators(m_translators, m_cache, m_threadsCount - 1 /* copyCount */);
   RawGeneratorWriter rawGeneratorWriter(m_queue, m_genInfo.m_tmpDir);
   rawGeneratorWriter.Run();
@@ -193,7 +198,7 @@ bool RawGenerator::GenerateFilteredFeatures()
     return false;
 
   m_names = rawGeneratorWriter.GetNames();
-  LOG(LINFO, ("Names:", m_names));
+  LOG(LINFO, ("Names:", m_names, (duration_cast<milliseconds>(system_clock::now().time_since_epoch()) - t).count()));
   return true;
 }
 }  // namespace generator
