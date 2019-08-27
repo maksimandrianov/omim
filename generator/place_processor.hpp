@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace generator
@@ -20,6 +21,7 @@ public:
   void Append(feature::FeatureBuilder const & fb);
   feature::FeatureBuilder const & GetFb() const;
   FeaturesBuilders const & GetFbs() const;
+  base::GeoObjectId GetMostGenericOsmId() const;
   m2::RectD const & GetLimitRect() const;
   uint8_t GetRank() const;
   std::string GetName() const;
@@ -37,10 +39,12 @@ private:
 class PlaceProcessor
 {
 public:
+  using PlaceWithIds = std::pair<feature::FeatureBuilder, std::vector<base::GeoObjectId>>;
+
   PlaceProcessor(std::shared_ptr<OsmIdToBoundariesTable> boundariesTable = {});
 
   void Add(feature::FeatureBuilder const & fb);
-  std::vector<feature::FeatureBuilder> ProcessPlaces();
+  std::vector<PlaceWithIds> ProcessPlaces();
 
 private:
   using FeaturePlaces = std::vector<FeaturePlace>;

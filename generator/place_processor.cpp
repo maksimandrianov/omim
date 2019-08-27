@@ -125,6 +125,11 @@ FeaturePlace::FeaturesBuilders const & FeaturePlace::GetFbs() const
   return m_fbs;
 }
 
+base::GeoObjectId FeaturePlace::GetMostGenericOsmId() const
+{
+  return GetFb().GetMostGenericOsmId();
+}
+
 m2::RectD const & FeaturePlace::GetLimitRect() const
 {
   return m_limitRect;
@@ -181,12 +186,12 @@ void PlaceProcessor::FillTable(FeaturePlaces::const_iterator start, FeaturePlace
   }
 
   if (lastId != base::GeoObjectId())
-    m_boundariesTable->Union(lastId, best->GetFb().GetMostGenericOsmId());
+    m_boundariesTable->Union(lastId, best->GetMostGenericOsmId());
 }
 
-std::vector<FeatureBuilder> PlaceProcessor::ProcessPlaces()
+std::vector<PlaceProcessor::PlaceWithIds> PlaceProcessor::ProcessPlaces()
 {
-  std::vector<FeatureBuilder> finalPlaces;
+  std::vector<PlaceWithIds> finalPlaces;
   for (auto & nameToGeoObjectIdToFeaturePlaces : m_nameToPlaces)
   {
     std::vector<FeaturePlace> places;
@@ -206,7 +211,12 @@ std::vector<FeatureBuilder> PlaceProcessor::ProcessPlaces()
     {
       auto end = FindGroupOfTheSamePlaces(start, std::end(places));
       auto best = std::max_element(start, end, IsWorsePlace<FeaturePlace>);
-      finalPlaces.emplace_back(best->GetFb());
+      std::vector<base::GeoObjectId> ids;
+      ids.reserve(static_cast<size_t>(std::distance(start, end)));
+      std::transform(start, end, std::back_inserter(ids), [](auto const & place) {
+        return place.GetMostGenericOsmId();
+      });
+      finalPlaces.emplace_back(best->GetFb(), std::move(ids));
       if (m_boundariesTable)
         FillTable(start, end, best);
 
