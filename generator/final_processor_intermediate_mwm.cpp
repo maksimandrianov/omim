@@ -35,6 +35,17 @@ using namespace base::thread_pool::computational;
 using namespace feature;
 using namespace serialization_policy;
 
+void Debug(std::vector<FeatureBuilder> const & fbs, std::string const & name)
+{
+  for (auto const & fb : fbs)
+  {
+    if (fb.GetTypes().empty() || fb.GetTypes().size() >= feature::kMaxTypesCount)
+    {
+      LOG(LINFO, ("+++", name, fb.GetMostGenericOsmId(), fb.GetName()));
+    }
+  }
+}
+
 namespace generator
 {
 namespace
@@ -219,9 +230,11 @@ public:
       ProcessForPromoCatalog(fbsWithIds);
 
     std::vector<FeatureBuilder> fbs;
-    fbs.resize(fbsWithIds.size());
+    fbs.reserve(fbsWithIds.size());
     std::transform(std::cbegin(fbsWithIds), std::cend(fbsWithIds),
                    std::back_inserter(fbs), base::RetrieveKey());
+
+    Debug(fbs, "1");
     auto const affiliations = GetAffiliations(fbs, m_affiliation, m_threadsCount);
     AppendToCountries(fbs, affiliations, m_temporaryMwmPath, m_threadsCount);
     return true;
@@ -363,6 +376,7 @@ bool CountryFinalProcessor::ProcessBooking()
   dataset.BuildOsmObjects([&](auto && fb) {
     fbs.emplace_back(std::move(fb));
   });
+  Debug(fbs, "2");
   auto const affiliations = GetAffiliations(fbs, affiliation, m_threadsCount);
   AppendToCountries(fbs, affiliations, m_temporaryMwmPath, m_threadsCount);
   return true;
@@ -398,6 +412,7 @@ bool CountryFinalProcessor::ProcessCoastline()
   auto const affiliation = CountriesFilesAffiliation(m_borderPath, m_haveBordersForWholeWorld);
   auto fbs = ReadAllDatRawFormat(m_coastlineGeomFilename);
   auto const affiliations = GetAffiliations(fbs, affiliation, m_threadsCount);
+  Debug(fbs, "3");
   AppendToCountries(fbs, affiliations, m_temporaryMwmPath, m_threadsCount);
   FeatureBuilderWriter<> collector(m_worldCoastsFilename);
   for (size_t i = 0; i < fbs.size(); ++i)

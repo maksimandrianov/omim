@@ -111,11 +111,10 @@ bool BuildPopularPlacesMwmSection(std::string const & srcFilename, std::string c
   return true;
 }
 
-
 PopularPlaces const & GetOrLoadPopularPlaces(std::string const & filename)
 {
   static std::mutex m;
-  static std::unordered_map<std::string, PopularPlaces> placesStorage;
+  static std::unordered_map<std::string, PopularPlaces> placesStorage{{"",  {}}};
 
   std::lock_guard<std::mutex> lock(m);
   auto const it = placesStorage.find(filename);

@@ -445,7 +445,7 @@ struct EnumClassHash
 struct RetrieveKey
 {
     template <typename T>
-    typename T::first_type operator()(T const & keyValue) const
+    typename T::first_type const &  operator()(T const & keyValue) const
     {
         return keyValue.first;
     }
@@ -454,7 +454,7 @@ struct RetrieveKey
 struct RetrieveValue
 {
     template <typename T>
-    typename T::second_type operator()(T const & keyValue) const
+    typename T::second_type const & operator()(T const & keyValue) const
     {
         return keyValue.second;
     }

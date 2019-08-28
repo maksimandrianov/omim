@@ -69,8 +69,8 @@ def stage_features(env, **kwargs):
         extra["generate_packed_borders"] = True
     if any(x == WORLD_NAME for x in env.countries):
         extra["generate_world"] = True
-    if env.build_all_countries:
-        extra["have_borders_for_whole_world"] = True
+    #if env.build_all_countries:
+    extra["have_borders_for_whole_world"] = True
 
     run_gen_tool(
         env.gen_tool,
