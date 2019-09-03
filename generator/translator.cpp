@@ -44,6 +44,7 @@ void Translator::SetFilter(std::shared_ptr<FilterInterface> const & filter)
 
 void Translator::Emit(OsmElement & element)
 {
+  Normalize(element);
   if (!m_filter->IsAccepted(element))
     return;
 

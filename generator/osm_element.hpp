@@ -123,8 +123,14 @@ struct OsmElement
     m_members.emplace_back(ref, type, role);
   }
 
-  void AddTag(char const * key, char const * value);
-  void AddTag(std::string const & key, std::string const & value);
+  void AddTag(char const * key, char const * value)
+  {
+    ASSERT(key, ());
+    ASSERT(value, ());
+    m_tags.emplace_back(key, value);
+  }
+
+  void AddTag(std::string const & key, std::string const & value) { m_tags.emplace_back(key, value); }
   bool HasTag(std::string const & key) const;
   bool HasTag(std::string const & key, std::string const & value) const;
   bool HasAnyTag(std::unordered_multimap<std::string, std::string> const & tags) const;
@@ -163,6 +169,8 @@ struct OsmElement
   std::vector<Member> m_members;
   std::vector<Tag> m_tags;
 };
+
+void Normalize(OsmElement & element);
 
 base::GeoObjectId GetGeoObjectId(OsmElement const & element);
 

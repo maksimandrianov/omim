@@ -8,40 +8,17 @@
 #include <cstring>
 #include <sstream>
 
-std::string DebugPrint(OsmElement::EntityType type)
+namespace
 {
-  switch (type)
-  {
-  case OsmElement::EntityType::Unknown:
-    return "unknown";
-  case OsmElement::EntityType::Way:
-    return "way";
-  case OsmElement::EntityType::Tag:
-    return "tag";
-  case OsmElement::EntityType::Relation:
-    return "relation";
-  case OsmElement::EntityType::Osm:
-    return "osm";
-  case OsmElement::EntityType::Node:
-    return "node";
-  case OsmElement::EntityType::Nd:
-    return "nd";
-  case OsmElement::EntityType::Member:
-    return "member";
-  }
-  UNREACHABLE();
-}
-
-void OsmElement::AddTag(char const * key, char const * value)
+bool NormalizeAndCheckTag(OsmElement::Tag & tag)
 {
-  ASSERT(key, ());
-  ASSERT(value, ());
-
+  strings::Trim(tag.m_key);
+  strings::Trim(tag.m_value);
   // Seems like source osm data has empty values. They are useless for us.
-  if (key[0] == '\0' || value[0] == '\0')
-    return;
+  if (tag.m_key.empty() || tag.m_value.empty())
+    return true;
 
-#define SKIP_KEY_BY_PREFIX(skippedKey) if (std::strncmp(key, skippedKey, sizeof(skippedKey)-1) == 0) return;
+#define SKIP_KEY_BY_PREFIX(skippedKey) if (std::strncmp(tag.m_key.c_str(), skippedKey, sizeof(skippedKey)-1) == 0) return true;
   // OSM technical info tags
   SKIP_KEY_BY_PREFIX("created_by");
   SKIP_KEY_BY_PREFIX("source");
@@ -66,15 +43,32 @@ void OsmElement::AddTag(char const * key, char const * value)
   SKIP_KEY_BY_PREFIX("short_name");
   SKIP_KEY_BY_PREFIX("official_name");
 #undef SKIP_KEY_BY_PREFIX
-
-  std::string val{value};
-  strings::Trim(val);
-  m_tags.emplace_back(key, std::move(val));
+  return false;
+}
 }
 
-void OsmElement::AddTag(std::string const & key, std::string const & value)
+std::string DebugPrint(OsmElement::EntityType type)
 {
-  AddTag(key.data(), value.data());
+  switch (type)
+  {
+  case OsmElement::EntityType::Unknown:
+    return "unknown";
+  case OsmElement::EntityType::Way:
+    return "way";
+  case OsmElement::EntityType::Tag:
+    return "tag";
+  case OsmElement::EntityType::Relation:
+    return "relation";
+  case OsmElement::EntityType::Osm:
+    return "osm";
+  case OsmElement::EntityType::Node:
+    return "node";
+  case OsmElement::EntityType::Nd:
+    return "nd";
+  case OsmElement::EntityType::Member:
+    return "member";
+  }
+  UNREACHABLE();
 }
 
 bool OsmElement::HasTag(std::string const & key) const
@@ -175,6 +169,11 @@ std::string OsmElement::GetTagValue(std::string const & key,
                                [&key](Tag const & tag) { return tag.m_key == key; });
 
   return it != m_tags.cend() ? it->m_value : defaultValue;
+}
+
+void Normalize(OsmElement & element)
+{
+  base::EraseIf(element.m_tags, NormalizeAndCheckTag);
 }
 
 std::string DebugPrint(OsmElement const & element)
