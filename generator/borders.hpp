@@ -50,6 +50,9 @@ public:
     : m_name(name)
     , m_regions(regions)
   {
+    m_regions.ForEach([&](auto const & region) {
+      m_rect.Add(region.GetRect());
+    });
   }
 
   CountryPolygons(CountryPolygons && other) = default;
@@ -59,6 +62,7 @@ public:
   CountryPolygons & operator=(CountryPolygons const & other) = default;
 
   std::string const & GetName() const { return m_name; }
+  m2::RectD const & GetLimitRect() const { return m_rect; }
   bool IsEmpty() const { return m_regions.IsEmpty(); }
   void Clear()
   {
@@ -84,6 +88,7 @@ public:
 private:
   std::string m_name;
   RegionsContainer m_regions;
+  m2::RectD m_rect;
 };
 
 class CountriesContainer
