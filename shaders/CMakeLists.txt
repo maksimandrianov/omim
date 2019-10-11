@@ -10,13 +10,6 @@ execute_process(
   gl_shaders
 )
 
-include_directories(
-  ${OMIM_ROOT}/3party/glm
-  ${OMIM_ROOT}/3party/jansson/src
-  ${OMIM_ROOT}/3party/Vulkan-Headers/include
-  ${OMIM_ROOT}/3party/vulkan_wrapper
-)
-
 set(
   SRC
   gl_program_info.hpp
@@ -131,6 +124,26 @@ set(
   GL/user_mark.vsh.glsl
   GL/user_mark_billboard.vsh.glsl
 )
+
 add_custom_target(gl_shaders_sources SOURCES ${GL_SHADERS_SRC})
+
+omim_link_libraries(
+  ${PROJECT_NAME}
+  base
+  coding
+  drape
+  platform
+)
+
+link_opengl(${PROJECT_NAME})
+link_qt5_core(${PROJECT_NAME})
+
+if (PLATFORM_LINUX)
+  # 3party libraries or external dependencies
+  omim_link_libraries(
+    ${PROJECT_NAME}
+    ${CMAKE_DL_LIBS}
+  )
+endif()
 
 omim_add_test_subdirectory(shaders_tests)

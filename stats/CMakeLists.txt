@@ -1,7 +1,5 @@
 project(stats_client)
 
-include_directories(${OMIM_ROOT} ${OMIM_ROOT}/3party/Alohalytics/src)
-
 set(
   SRC
   ${OMIM_ROOT}/3party/Alohalytics/src/cpp/alohalytics.cc

@@ -1,10 +1,5 @@
 project(srtm_coverage_checker)
 
-include_directories(
-  ${OMIM_ROOT}/3party/gflags/src
-  ${OMIM_ROOT}/3party/jansson/src
-)
-
 set(
   SRC
   srtm_coverage_checker.cpp
@@ -30,7 +25,4 @@ omim_link_libraries(
   oauthcpp
   protobuf
   stats_client
-  ${LIBZ}
 )
-
-link_qt5_core(${PROJECT_NAME})
