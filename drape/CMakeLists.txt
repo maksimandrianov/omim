@@ -189,6 +189,8 @@ omim_link_libraries(
   vulkan_wrapper
 )
 
+link_opengl(${PROJECT_NAME})
+
 if (PLATFORM_MAC)
   # 3party libraries or external dependencies
   omim_link_libraries(

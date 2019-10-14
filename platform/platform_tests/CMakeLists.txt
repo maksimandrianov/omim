@@ -28,11 +28,11 @@ omim_link_libraries(
 )
 
 # 3party libraries or external dependencies
-omim_link_libraries(${PROJECT_NAME}
+omim_link_libraries(
+  ${PROJECT_NAME}
   jansson
 )
 
-link_opengl(${PROJECT_NAME})
 link_qt5_core(${PROJECT_NAME})
 
 if (PLATFORM_LINUX)

@@ -18,15 +18,6 @@ set(
 
 omim_add_test(${PROJECT_NAME} ${SRC})
 
-if (PLATFORM_MAC)
-  omim_link_libraries(
-    ${PROJECT_NAME}
-    ${Qt5Widgets_LIBRARIES}
-    ${Qt5Core_LIBRARIES}
-    ${Qt5Gui_LIBRARIES}
-  )
-endif()
-
 omim_link_libraries(
   ${PROJECT_NAME}
   base
@@ -36,7 +27,6 @@ omim_link_libraries(
   shaders
 )
 
-link_opengl(${PROJECT_NAME})
 link_qt5_core(${PROJECT_NAME})
 
 if (PLATFORM_LINUX)

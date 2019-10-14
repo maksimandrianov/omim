@@ -135,15 +135,4 @@ omim_link_libraries(
   platform
 )
 
-link_opengl(${PROJECT_NAME})
-link_qt5_core(${PROJECT_NAME})
-
-if (PLATFORM_LINUX)
-  # 3party libraries or external dependencies
-  omim_link_libraries(
-    ${PROJECT_NAME}
-    ${CMAKE_DL_LIBS}
-  )
-endif()
-
 omim_add_test_subdirectory(shaders_tests)

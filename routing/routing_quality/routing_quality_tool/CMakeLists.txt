@@ -21,3 +21,9 @@ omim_link_libraries(
   routing_api
   routing_quality
 )
+
+# 3party libraries or external dependencies
+omim_link_libraries(
+  ${PROJECT_NAME}
+  gflags
+)

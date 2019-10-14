@@ -42,6 +42,7 @@ omim_link_libraries(
 # 3party libraries or external dependencies
 omim_link_libraries(
   ${PROJECT_NAME}
+  gflags
   ${Qt5Widgets_LIBRARIES}
 )
 

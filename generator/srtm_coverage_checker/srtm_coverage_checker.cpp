@@ -1,5 +1,7 @@
 #include "generator/srtm_parser.hpp"
 
+#include "generator/srtm_parser.hpp"
+
 #include "routing/routing_helpers.hpp"
 
 #include "indexer/classificator_loader.hpp"

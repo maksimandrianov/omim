@@ -16,3 +16,10 @@ omim_link_libraries(
   routing
   storage
 )
+
+# 3party libraries or external dependencies
+omim_link_libraries(
+  ${PROJECT_NAME}
+  gflags
+  pugixml
+)

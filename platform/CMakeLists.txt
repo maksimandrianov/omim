@@ -163,31 +163,31 @@ omim_link_libraries(
   stats_client
 )
 
+link_qt5_core(${PROJECT_NAME})
+
 if (APPLE)
   target_compile_options(${PROJECT_NAME} PUBLIC "-fobjc-arc")
 endif()
 
 if (PLATFORM_LINUX)
-  link_opengl(${PROJECT_NAME})
-  link_qt5_core(${PROJECT_NAME})
-  link_qt5_network(${PROJECT_NAME})
-
   # 3party libraries or external dependencies
   omim_link_libraries(
     ${PROJECT_NAME}
     ${CMAKE_DL_LIBS}
   )
+
+  link_qt5_network(${PROJECT_NAME})
 elseif (PLATFORM_MAC)
   # 3party libraries or external dependencies
   omim_link_libraries(
     ${PROJECT_NAME}
     "-framework CFNetwork"
     "-framework CoreFoundation"
+    "-framework CoreLocation"
     "-framework Foundation"
     "-framework IOKit"
     "-framework Security"
     "-framework SystemConfiguration"
-    "-framework UIKit"
   )
 endif()
 
