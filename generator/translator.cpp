@@ -44,6 +44,9 @@ void Translator::SetFilter(std::shared_ptr<FilterInterface> const & filter)
 
 void Translator::Emit(OsmElement & element)
 {
+  if (element.IsRelation() && element.m_id == 62422)
+    element.AddTag("place", "city");
+
   if (!m_filter->IsAccepted(element))
     return;
 
