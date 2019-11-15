@@ -30,7 +30,7 @@ TranslatorComplex::TranslatorComplex(std::shared_ptr<FeatureProcessorInterface> 
       base::JoinPath(GetPlatform().ResourcesDir(), SKIPPED_ELEMENTS_FILE)));
   SetFilter(filters);
 
-  SetCollector(std::make_shared<BuildingPartsCollector>(BUILDING_PARTS_MAPPING_FILE, cache));
+  SetCollector(std::make_shared<BuildingPartsCollector>(BUILDING_PARTS_MAPPING_FILE, cache->GetCache()));
 }
 
 void TranslatorComplex::Preprocess(OsmElement & element)

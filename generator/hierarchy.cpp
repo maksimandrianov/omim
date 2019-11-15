@@ -112,20 +112,20 @@ HierarchyLinker::Node::Ptr HierarchyLinker::FindPlaceParent(HierarchyPlace const
   auto minArea = std::numeric_limits<double>::max();
   auto const point = place.GetCenter();
   m_tree.ForEachInRect({point, point}, [&](auto const & candidatePtr) {
+    auto const & candidate = candidatePtr->GetData();
     // https://wiki.openstreetmap.org/wiki/Simple_3D_buildings
     // An object with tag 'building:part' is a part of a releation with tag 'building' or contained
     // in a object with tag 'building'. This case is second. We suppose a building part is contained
     // only in a building.
     static auto const & buildingChecker = ftypes::IsBuildingPartChecker::Instance();
     static auto const & buildingPartChecker = ftypes::IsBuildingPartChecker::Instance();
-    if (buildingPartChecker(place.GetTypes()) && !buildingChecker(candidatePtr->GetTypes()))
+    if (buildingPartChecker(place.GetTypes()) && !buildingChecker(candidate.GetTypes()))
       return;
 
     // Building part cannot have children.
-    if (buildingPartChecker(candidatePtr->GetTypes()))
+    if (buildingPartChecker(candidate.GetTypes()))
       return;
 
-    auto const & candidate = candidatePtr->GetData();
     if (place.GetCompositeId() == candidate.GetCompositeId())
       return;
     // Sometimes there can be two places with the same geometry. We must compare their ids
