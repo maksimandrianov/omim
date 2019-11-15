@@ -190,7 +190,7 @@ std::vector<base::GeoObjectId> const & BuildingToBuildingPartsMap::GetBuildingPa
 {
   auto const it =
       std::lower_bound(std::cbegin(m_outlineToBuildingPart), std::cend(m_outlineToBuildingPart), id,
-                       [](auto const & lhs, auto const & rhs) { lhs.first < rhs; });
+                       [](auto const & lhs, auto const & rhs) { return lhs.first < rhs; });
 
   if (it == std::cend(m_outlineToBuildingPart) || it->first != id)
   {
