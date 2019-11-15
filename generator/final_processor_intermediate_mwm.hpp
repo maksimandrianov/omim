@@ -2,6 +2,7 @@
 
 #include "generator/coastlines_generator.hpp"
 #include "generator/feature_generator.hpp"
+#include "generator/filter_interface.hpp"
 #include "generator/hierarchy.hpp"
 #include "generator/hierarchy_entry.hpp"
 #include "generator/world_map_generator.hpp"
@@ -136,18 +137,26 @@ public:
   ComplexFinalProcessor(std::string const & mwmTmpPath, std::string const & outFilename,
                         size_t threadsCount);
 
-  void SetMwmAndFt2OsmPath(std::string const & mwmPath, std::string const & osm2ftPath);
+  void SetGetMainTypeFunction(hierarchy::GetMainTypeFn const & getMainType);
+  void SetFilter(std::shared_ptr<FilterInterface> const & filter);
+  void SetGetNameFunction(hierarchy::GetNameFn const & getName);
   void SetPrintFunction(hierarchy::PrintFn const & printFunction);
+
+  void UseCentersEnricher(std::string const & mwmPath, std::string const & osm2ftPath);
 
   // FinalProcessorIntermediateMwmInterface overrides:
   void Process() override;
 
 private:
-  std::shared_ptr<hierarchy::HierarchyLineEnricher> CreateEnricher(
+  std::unique_ptr<hierarchy::HierarchyLineEnricher> CreateEnricher(
       std::string const & countryName) const;
   void WriteLines(std::vector<HierarchyEntry> const & lines);
 
-  hierarchy::PrintFn m_printFunction = hierarchy::PrintDefault;
+  hierarchy::GetMainTypeFn m_getMainType;
+  hierarchy::PrintFn m_printFunction;
+  hierarchy::GetNameFn m_getName;
+  std::shared_ptr<FilterInterface> m_filter;
+  bool m_useCentersEnricher = false;
   std::string m_mwmTmpPath;
   std::string m_outFilename;
   std::string m_mwmPath;

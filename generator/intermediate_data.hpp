@@ -205,6 +205,7 @@ public:
   // TODO |GetNode()|, |lat|, |lon| are used as y, x in real.
   bool GetNode(Key id, double & lat, double & lon) const { return m_nodes.GetPoint(id, lat, lon); }
   bool GetWay(Key id, WayElement & e) { return m_ways.Read(id, e); }
+  bool GetRalation(Key id, RelationElement & e) { return m_relations.Read(id, e); }
 
   template <typename ToDo>
   void ForEachRelationByWay(Key id, ToDo && toDo)
@@ -225,6 +226,13 @@ public:
   {
     CachedRelationProcessor<ToDo> processor(m_relations, std::forward<ToDo>(toDo));
     m_nodeToRelations.ForEachByKey(id, processor);
+  }
+
+  template <typename ToDo>
+  void ForEachRelationByRelationCached(Key id, ToDo && toDo)
+  {
+    CachedRelationProcessor<ToDo> processor(m_relations, std::forward<ToDo>(toDo));
+    m_relationToRelations.ForEachByKey(id, processor);
   }
 
 private:
@@ -269,6 +277,7 @@ private:
   cache::OSMElementCacheReader m_relations;
   cache::IndexFileReader const & m_nodeToRelations;
   cache::IndexFileReader const & m_wayToRelations;
+  cache::IndexFileReader const & m_relationToRelations;
 };
 
 class IntermediateDataWriter
@@ -301,6 +310,7 @@ private:
   cache::OSMElementCacheWriter m_relations;
   cache::IndexFileWriter m_nodeToRelations;
   cache::IndexFileWriter m_wayToRelations;
+  cache::IndexFileWriter m_relationToRelations;
 };
 
 std::unique_ptr<PointStorageReaderInterface>

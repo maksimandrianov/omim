@@ -86,7 +86,7 @@ void AddElementToCache(cache::IntermediateDataWriter & cache, OsmElement & eleme
         relation.ways.emplace_back(member.m_ref, string(member.m_role));
         break;
       case OsmElement::EntityType::Relation:
-        // we just ignore type == "relation"
+        relation.relations.emplace_back(member.m_ref, string(member.m_role));
         break;
       default:
         break;

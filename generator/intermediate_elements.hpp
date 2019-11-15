@@ -91,6 +91,7 @@ public:
 
   std::vector<Member> nodes;
   std::vector<Member> ways;
+  std::vector<Member> relations;
   std::map<std::string, std::string> tags;
 
   bool IsValid() const { return !(nodes.empty() && ways.empty()); }
@@ -104,6 +105,7 @@ public:
   std::string GetType() const { return GetTagValue("type"); }
   bool FindWay(uint64_t id, std::string & role) const { return FindRoleImpl(ways, id, role); }
   bool FindNode(uint64_t id, std::string & role) const { return FindRoleImpl(nodes, id, role); }
+  bool FindRelation(uint64_t id, std::string & role) const { return FindRoleImpl(relations, id, role); }
 
   template <class ToDo>
   void ForEachWay(ToDo & toDo) const
@@ -114,24 +116,30 @@ public:
 
   std::string GetNodeRole(uint64_t const id) const
   {
-    for (size_t i = 0; i < nodes.size(); ++i)
-      if (nodes[i].first == id)
-        return nodes[i].second;
-    return std::string();
+    std::string role;
+    UNUSED_VALUE(FindNode(id, role));
+    return role;
   }
 
   std::string GetWayRole(uint64_t const id) const
   {
-    for (size_t i = 0; i < ways.size(); ++i)
-      if (ways[i].first == id)
-        return ways[i].second;
-    return std::string();
+    std::string role;
+    UNUSED_VALUE(FindWay(id, role));
+    return role;
+  }
+
+  std::string GetRelationRole(uint64_t const id) const
+  {
+    std::string role;
+    UNUSED_VALUE(FindRelation(id, role));
+    return role;
   }
 
   void Swap(RelationElement & rhs)
   {
     nodes.swap(rhs.nodes);
     ways.swap(rhs.ways);
+    relations.swap(rhs.relations);
     tags.swap(rhs.tags);
   }
 
@@ -162,6 +170,7 @@ public:
 
     MembersWriter(nodes);
     MembersWriter(ways);
+    MembersWriter(relations);
 
     uint64_t count = tags.size();
     WriteVarUint(writer, count);
@@ -202,6 +211,7 @@ public:
 
     MembersReader(nodes);
     MembersReader(ways);
+    MembersReader(relations);
 
     // decode tags
     tags.clear();

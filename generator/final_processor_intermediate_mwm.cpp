@@ -553,11 +553,19 @@ ComplexFinalProcessor::ComplexFinalProcessor(std::string const & mwmTmpPath,
 {
 }
 
-void ComplexFinalProcessor::SetMwmAndFt2OsmPath(std::string const & mwmPath,
-                                                std::string const & osm2ftPath)
+void ComplexFinalProcessor::SetGetMainTypeFunction(hierarchy::GetMainTypeFn const & getMainType)
 {
-  m_mwmPath = mwmPath;
-  m_osm2ftPath = osm2ftPath;
+  m_getMainType = getMainType;
+}
+
+void ComplexFinalProcessor::SetFilter(std::shared_ptr<FilterInterface> const & filter)
+{
+  m_filter = filter;
+}
+
+void ComplexFinalProcessor::SetGetNameFunction(hierarchy::GetNameFn const & getName)
+{
+  m_getName = getName;
 }
 
 void ComplexFinalProcessor::SetPrintFunction(hierarchy::PrintFn const & printFunction)
@@ -565,13 +573,18 @@ void ComplexFinalProcessor::SetPrintFunction(hierarchy::PrintFn const & printFun
   m_printFunction = printFunction;
 }
 
-std::shared_ptr<hierarchy::HierarchyLineEnricher> ComplexFinalProcessor::CreateEnricher(
+void ComplexFinalProcessor::UseCentersEnricher(std::string const & mwmPath,
+                                               std::string const & osm2ftPath)
+{
+  m_useCentersEnricher = true;
+  m_mwmPath = mwmPath;
+  m_osm2ftPath = osm2ftPath;
+}
+
+std::unique_ptr<hierarchy::HierarchyLineEnricher> ComplexFinalProcessor::CreateEnricher(
     std::string const & countryName) const
 {
-  if (m_osm2ftPath.empty() || m_mwmPath.empty())
-    return {};
-
-  return std::make_shared<hierarchy::HierarchyLineEnricher>(
+  return std::make_unique<hierarchy::HierarchyLineEnricher>(
       base::JoinPath(m_osm2ftPath, countryName + DATA_FILE_EXTENSION OSM2FEATURE_FILE_EXTENSION),
       base::JoinPath(m_mwmPath, countryName + DATA_FILE_EXTENSION));
 }
@@ -586,16 +599,17 @@ void ComplexFinalProcessor::Process()
       strings::ReplaceLast(countryName, DATA_FILE_EXTENSION_TMP, "");
 
       hierarchy::HierarchyBuilder builder(base::JoinPath(m_mwmTmpPath, filename));
-      builder.SetGetMainTypeFunction(hierarchy::GetMainType);
-      builder.SetGetNameFunction(hierarchy::GetName);
+      builder.SetGetMainTypeFunction(m_getMainType);
+      builder.SetFilter(m_filter);
       auto nodes = builder.Build();
 
-      auto const enricher = CreateEnricher(countryName);
       hierarchy::HierarchyLinesBuilder linesBuilder(std::move(nodes));
-      linesBuilder.SetHierarchyLineEnricher(enricher);
+      if (m_useCentersEnricher)
+        linesBuilder.SetHierarchyLineEnricher(CreateEnricher(countryName));
+
       linesBuilder.SetCountry(countryName);
-      linesBuilder.SetGetMainTypeFunction(hierarchy::GetMainType);
-      linesBuilder.SetGetNameFunction(hierarchy::GetName);
+      linesBuilder.SetGetMainTypeFunction(m_getMainType);
+      linesBuilder.SetGetNameFunction(m_getName);
       return linesBuilder.GetHierarchyLines();
     });
     futures.emplace_back(std::move(future));
