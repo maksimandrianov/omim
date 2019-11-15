@@ -1,5 +1,6 @@
 #include "generator/hierarchy_entry.hpp"
 
+#include "indexer/classificator.hpp"
 #include "indexer/feature_utils.hpp"
 #include "indexer/ftypes_matcher.hpp"
 
@@ -77,8 +78,8 @@ uint32_t GetMainType(FeatureParams::Types const & types)
   if (it != std::cend(types))
     return *it;
 
-  auto const & buildingPartChecker = ftypes::IsBuildingPartChecker::Instance();
-  it = base::FindIf(types, buildingPartChecker);
+  static auto const churchyard = classif().GetTypeByPath({"landuse", "churchyard"});
+  it = std::find(std::cbegin(types), std::cend(types), churchyard);
   return it != std::cend(types) ? *it : ftype::GetEmptyValue();
 }
 
