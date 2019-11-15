@@ -377,7 +377,7 @@ IntermediateDataReader::IntermediateDataReader(PointStorageReaderInterface const
   , m_relations(info.GetIntermediateFileName(RELATIONS_FILE), info.m_preloadCache, forceReload)
   , m_nodeToRelations(GetOrCreateIndexReader(info.GetIntermediateFileName(NODES_FILE, ID2REL_EXT), forceReload))
   , m_wayToRelations(GetOrCreateIndexReader(info.GetIntermediateFileName(WAYS_FILE, ID2REL_EXT), forceReload))
-  , m_relationToRelations(GetOrCreateIndexReader(info.GetIntermediateFileName(RELATIONS_FILE, ID2REL_EXT), forceReload))
+//  , m_relationToRelations(GetOrCreateIndexReader(info.GetIntermediateFileName(RELATIONS_FILE, ID2REL_EXT), forceReload))
 {}
 
 // IntermediateDataWriter
