@@ -231,8 +231,8 @@ public:
   template <typename ToDo>
   void ForEachRelationByRelationCached(Key id, ToDo && toDo)
   {
-//    CachedRelationProcessor<ToDo> processor(m_relations, std::forward<ToDo>(toDo));
-//    m_relationToRelations.ForEachByKey(id, processor);
+    CachedRelationProcessor<ToDo> processor(m_relations, std::forward<ToDo>(toDo));
+    m_relationToRelations.ForEachByKey(id, processor);
   }
 
 private:
@@ -277,7 +277,7 @@ private:
   cache::OSMElementCacheReader m_relations;
   cache::IndexFileReader const & m_nodeToRelations;
   cache::IndexFileReader const & m_wayToRelations;
-//  cache::IndexFileReader const & m_relationToRelations;
+  cache::IndexFileReader const & m_relationToRelations;
 };
 
 class IntermediateDataWriter
