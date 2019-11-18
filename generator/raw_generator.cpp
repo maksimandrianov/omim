@@ -69,8 +69,8 @@ void RawGenerator::GenerateCustom(
 
 bool RawGenerator::Execute()
 {
-  if (!GenerateFilteredFeatures())
-    return false;
+//  if (!GenerateFilteredFeatures())
+//    return false;
 
   while (!m_finalProcessors.empty())
   {

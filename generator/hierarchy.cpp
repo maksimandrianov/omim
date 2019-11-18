@@ -112,6 +112,8 @@ HierarchyLinker::Node::Ptr HierarchyLinker::FindPlaceParent(HierarchyPlace const
   Node::Ptr parent = nullptr;
   auto minArea = std::numeric_limits<double>::max();
   auto const point = place.GetCenter();
+  if (!place.IsPoint() && base::AlmostEqualAbs(place.GetArea(), 0.0, std::numeric_limits<double>::epsilon()))
+        return parent;
   m_tree.ForEachInRect({point, point}, [&](auto const & candidatePtr) {
     auto const & candidate = candidatePtr->GetData();
     // https://wiki.openstreetmap.org/wiki/Simple_3D_buildings
