@@ -41,7 +41,8 @@ double CalculateOverlapPercentage(std::vector<m2::PointD> const & lhs,
   std::vector<BoostPolygon> coll;
   boost::geometry::intersection(lhs, rhs, coll);
   auto const min = std::min(boost::geometry::area(lhs), boost::geometry::area(rhs));
-  CHECK_GREATER(min, 0.0, (min));
+  if (base::AlmostEqualAbs(min, 0.0, std::numeric_limits<double>::epsilon()))
+    return 0.0;
   auto const binOp = [](double x, BoostPolygon const & y) { return x + boost::geometry::area(y); };
   auto const sum = std::accumulate(std::cbegin(coll), std::cend(coll), 0.0, binOp);
   return sum * 100 / min;
