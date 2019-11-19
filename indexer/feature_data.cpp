@@ -554,7 +554,11 @@ uint32_t FeatureParams::FindType(uint32_t comp, uint8_t level) const
 
 bool FeatureParams::CheckValid() const
 {
-  CHECK(!m_types.empty() && m_types.size() <= kMaxTypesCount, ());
+  if (m_types.empty() || m_types.size() > kMaxTypesCount)
+  {
+    LOG(LINFO, ("!(m_types.empty() || m_types.size() > kMaxTypesCount)"));
+    return false;
+  }
 
   return FeatureParamsBase::CheckValid();
 }

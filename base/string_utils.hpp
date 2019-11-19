@@ -586,13 +586,21 @@ std::string JoinAny(Iterator first, Iterator last, Delimiter const & delimiter,
   return result;
 }
 
+template <typename T>
+struct A
+{
+    std::string operator()(T const & v)
+    {
+      return to_string(v);
+    }
+};
+
 template <typename Container, typename Delimiter = char const>
 std::string JoinAny(Container const & container,
                     Delimiter const & delimiter = ',',
                     std::function<
                         std::string (typename Container::value_type const & v)> const & converter =
-                          [](typename Container::value_type const & item)
-                          { return to_string(item); })
+                          A<typename Container::value_type>())
 {
   return JoinAny(std::cbegin(container), std::cend(container), delimiter, converter);
 }
