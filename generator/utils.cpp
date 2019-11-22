@@ -20,6 +20,7 @@
 #include <vector>
 
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+#define BOOST_STACKTRACE_USE_BACKTRACE
 #include <boost/stacktrace.hpp>
 
 namespace generator
