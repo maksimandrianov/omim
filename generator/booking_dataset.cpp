@@ -53,7 +53,13 @@ bool BookingDataset::NecessaryMatchingConditionHolds(FeatureBuilder const & fb) 
   if (fb.GetName(StringUtf8Multilang::kDefaultCode).empty())
     return false;
 
-  return ftypes::IsHotelChecker::Instance()(fb.GetTypes());
+  auto const isHotel = ftypes::IsHotelChecker::Instance()(fb.GetTypes());
+
+  if (isHotel)
+  {
+    LOG(LINFO, ("BOOKING:", fb.GetMostGenericOsmId(), "is osm hotel"));
+  }
+  return isHotel;
 }
 
 template <>
@@ -195,7 +201,10 @@ BookingDataset::ObjectId BookingDataset::FindMatchingObjectIdImpl(FeatureBuilder
   for (auto const j : bookingIndexes)
   {
     if (sponsored_scoring::Match(m_storage.GetObjectById(j), fb).IsMatched())
+    {
+      LOG(LINFO, ("BOOKING:", j, "and", fb.GetMostGenericOsmId(), "matched."));
       return j;
+    }
   }
 
   return Object::InvalidObjectId();
