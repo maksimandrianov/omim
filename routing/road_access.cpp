@@ -137,8 +137,12 @@ optional<RoadAccess::Confidence> RoadAccess::GetConfidenceForAccessConditional(
 // Functions ---------------------------------------------------------------------------------------
 time_t GetCurrentTimestamp()
 {
-  using system_clock = chrono::system_clock;
-  return system_clock::to_time_t(system_clock::now());
+  // Here we use steady_clock instead of system_clock, because system_clock call makes syscalls in
+  // some OSs(include centos6/7).
+  using namespace chrono;
+
+  static auto const kNow = system_clock::now().time_since_epoch() - steady_clock::now().time_since_epoch();
+  return duration_cast<seconds>(kNow + steady_clock::now().time_since_epoch()).count();
 }
 
 string ToString(RoadAccess::Type type)
