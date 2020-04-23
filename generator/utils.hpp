@@ -61,6 +61,9 @@ public:
   FeatureGetter(std::string const & countryFullPath);
 
   std::unique_ptr<FeatureType> GetFeatureByIndex(uint32_t index) const;
+  size_t Size() const;
+
+  DataSource & GetDataSource() { return m_mwm.GetDataSource(); }
 
 private:
   SingleMwmDataSource m_mwm;

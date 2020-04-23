@@ -44,11 +44,14 @@
 #include "indexer/classificator_loader.hpp"
 #include "indexer/data_header.hpp"
 #include "indexer/drawing_rules.hpp"
+#include "indexer/feature_algo.hpp"
 #include "indexer/features_offsets_table.hpp"
 #include "indexer/features_vector.hpp"
 #include "indexer/index_builder.hpp"
 #include "indexer/map_style_reader.hpp"
 #include "indexer/rank_table.hpp"
+
+#include "descriptions/loader.hpp"
 
 #include "storage/country_parent_getter.hpp"
 
@@ -196,12 +199,60 @@ DEFINE_bool(generate_traffic_keys, false,
 
 DEFINE_bool(dump_mwm_tmp, false, "Prints feature builder objects from .mwm.tmp");
 
+DEFINE_string(dump_artem, "", "");
+
 // Common.
 DEFINE_uint64(threads_count, 0, "Desired count of threads. If count equals zero, count of "
                                 "threads is set automatically.");
 DEFINE_bool(verbose, false, "Provide more detailed output.");
 
 using namespace generator;
+
+void DumpArtem(std::string const & mwmPath, std::string const & mappingPath, std::string const & outPath)
+{
+  auto fg = FeatureGetter(mwmPath);
+  auto descriptionsLoader = descriptions::Loader(fg.GetDataSource());
+
+  std::unordered_map<uint32_t, base::GeoObjectId> mapping;
+  CHECK(ParseFeatureIdToOsmIdMapping(mappingPath, mapping), ());
+
+  std::ofstream out(outPath, ios::app);
+  for (uint32_t index = 0; index < fg.Size(); ++index)
+  {
+    auto ft = fg.GetFeatureByIndex(index);
+    auto const & hasAttractionsType = ftypes::AttractionsChecker::Instance();
+    bool isAttraction = false;
+    if (hasAttractionsType(*ft))
+      isAttraction = true;
+
+    bool hasDescription = false;
+    std::string str;
+    if (descriptionsLoader.GetDescription(ft->GetID(), {}, str))
+      hasDescription = true;
+
+
+    if ((isAttraction || hasDescription) && mapping.count(index) > 0)
+    {
+      auto const center = mercator::ToLatLon(feature::GetCenter(*ft));
+
+      std::vector<std::string> names;
+      ft->ForEachName([&](auto code, auto const & name){
+        names.emplace_back(string(StringUtf8Multilang::GetLangByCode(code)) + ":" + name);
+      });
+
+      out << mapping[index].GetEncodedId() << ';'
+          << std::fixed << std::setprecision(6)
+          << center.m_lat << ';'
+          << center.m_lon << ';';
+
+      std::move(std::begin(names), std::end(names), std::ostream_iterator<std::string>(out, ","));
+      out << ';';
+
+      out << static_cast<int>(hasDescription) << '\n';
+    }
+  }
+}
+
 
 MAIN_WITH_ERROR_HANDLING([](int argc, char ** argv)
 {
@@ -338,6 +389,14 @@ MAIN_WITH_ERROR_HANDLING([](int argc, char ** argv)
     string const datFile = base::JoinPath(path, country + DATA_FILE_EXTENSION);
     string const osmToFeatureFilename =
         genInfo.GetTargetFileName(country) + OSM2FEATURE_FILE_EXTENSION;
+
+    if (!FLAGS_dump_artem.empty())
+    {
+      if (country == WORLD_FILE_NAME || country == WORLD_COASTS_FILE_NAME)
+        continue;
+
+      DumpArtem(datFile, osmToFeatureFilename, FLAGS_dump_artem);
+    }
 
     if (FLAGS_generate_geometry)
     {

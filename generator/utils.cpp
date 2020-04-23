@@ -80,6 +80,11 @@ std::unique_ptr<FeatureType> FeatureGetter::GetFeatureByIndex(uint32_t index) co
   return m_guard->GetFeatureByIndex(index);
 }
 
+size_t FeatureGetter::Size() const
+{
+  return m_guard->GetNumFeatures();
+}
+
 void LoadDataSource(DataSource & dataSource)
 {
   std::vector<platform::LocalCountryFile> localFiles;
