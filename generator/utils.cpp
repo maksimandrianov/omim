@@ -65,7 +65,7 @@ SingleMwmDataSource::SingleMwmDataSource(std::string const & mwmPath)
         ("No correct mwm corresponding to local country file:", m_countryFile, ". Path:", mwmPath));
 
   auto const result = m_dataSource.Register(m_countryFile);
-  CHECK_EQUAL(result.second, MwmSet::RegResult::Success, ());
+  CHECK_EQUAL(result.second, MwmSet::RegResult::Success, (result.second));
   CHECK(result.first.IsAlive(), ());
   m_mwmId = result.first;
 }
