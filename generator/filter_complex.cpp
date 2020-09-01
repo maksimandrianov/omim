@@ -19,4 +19,15 @@ bool FilterComplex::IsAccepted(feature::FeatureBuilder const & fb) const
 
   return hierarchy::GetMainType(fb.GetTypes()) != ftype::GetEmptyValue();
 }
+
+std::shared_ptr<FilterInterface> FilterComplexPopularity::Clone() const
+{
+  return std::make_shared<FilterComplexPopularity>();
+}
+
+bool FilterComplexPopularity::IsAccepted(feature::FeatureBuilder const & fb) const
+{
+  auto const & buildingPartChecker = ftypes::IsBuildingPartChecker::Instance();
+  return FilterComplex::IsAccepted(fb) && !buildingPartChecker(fb.GetTypes());
+}
 }  // namespace generator
