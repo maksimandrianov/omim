@@ -6,6 +6,7 @@
 #include "routing_common/car_model.hpp"
 #include "routing_common/pedestrian_model.hpp"
 
+#include "indexer/classificator.hpp"
 #include "indexer/feature_algo.hpp"
 #include "indexer/feature_impl.hpp"
 #include "indexer/feature_visibility.hpp"
@@ -230,10 +231,18 @@ bool FeatureBuilder::PreSerialize()
 
     // Store ref's in name field (used in "highway-motorway_junction").
     // Also can be used to save post_box postcodes.
+    static uint32_t id = 0;
     if (!m_params.ref.empty())
     {
       if (ftypes::IsMotorwayJunctionChecker::Instance()(GetTypes()) || m_params.name.IsEmpty())
+      {
+        for (auto const t : m_params.m_types)
+        {
+          LOG(LINFO, ("bool FeatureBuilder::PreSerialize() :", id, classif().GetReadableObjectName(t)));
+        }
         m_params.name.AddString(StringUtf8Multilang::kDefaultCode, m_params.ref);
+      }
+      ++id;
     }
 
     m_params.ref.clear();
